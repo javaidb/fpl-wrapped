@@ -10,6 +10,9 @@ import {
   useToast,
   Container,
   Progress,
+  Link,
+  OrderedList,
+  ListItem,
 } from '@chakra-ui/react';
 import { fetchLeagueInfo, fetchManagerHistory, LeagueInfo, ManagerHistory } from './services/fplApi';
 import LeagueStats from './components/LeagueStats';
@@ -64,7 +67,7 @@ function App() {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to fetch league data',
+        description: 'Failed to fetch league data. Please make sure the league ID is correct.',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -102,12 +105,22 @@ function App() {
               borderRadius="xl"
               boxShadow="xl"
             >
-              <VStack spacing={4}>
+              <VStack spacing={6}>
+                <Box w="full">
+                  <Text mb={2} fontWeight="medium">How to find your league ID:</Text>
+                  <OrderedList spacing={2} pl={4} color="gray.600" fontSize="sm">
+                    <ListItem>Go to the <Link href="https://fantasy.premierleague.com/" isExternal color="purple.500">FPL website</Link></ListItem>
+                    <ListItem>Click on your league name</ListItem>
+                    <ListItem>Copy the number from the URL</ListItem>
+                  </OrderedList>
+                </Box>
+
                 <Input
-                  placeholder="Enter your league ID"
+                  placeholder="Enter your league ID (e.g., 123456)"
                   value={leagueId}
                   onChange={(e) => setLeagueId(e.target.value)}
                   size="lg"
+                  type="number"
                 />
                 <Button
                   type="submit"
@@ -119,13 +132,18 @@ function App() {
                   Generate Wrapped
                 </Button>
                 {loading && (
-                  <Progress
-                    value={loadingProgress}
-                    w="full"
-                    colorScheme="purple"
-                    hasStripe
-                    isAnimated
-                  />
+                  <Box w="full">
+                    <Text mb={2} fontSize="sm" color="gray.600" textAlign="center">
+                      Fetching data for all managers...
+                    </Text>
+                    <Progress
+                      value={loadingProgress}
+                      w="full"
+                      colorScheme="purple"
+                      hasStripe
+                      isAnimated
+                    />
+                  </Box>
                 )}
               </VStack>
             </Box>

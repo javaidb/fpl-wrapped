@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+const CORS_PROXY = 'https://corsproxy.io/?';
 const FPL_API_BASE_URL = 'https://fantasy.premierleague.com/api';
 
 export interface LeagueInfo {
@@ -71,10 +72,11 @@ interface PastSeason {
 export const fetchLeagueInfo = async (leagueId: string): Promise<LeagueInfo> => {
   try {
     const response = await axios.get(
-      `${FPL_API_BASE_URL}/leagues-classic/${leagueId}/standings/`
+      `${CORS_PROXY}${encodeURIComponent(`${FPL_API_BASE_URL}/leagues-classic/${leagueId}/standings/`)}`
     );
     return response.data;
   } catch (error) {
+    console.error('Error fetching league info:', error);
     throw new Error('Failed to fetch league information');
   }
 };
@@ -82,10 +84,11 @@ export const fetchLeagueInfo = async (leagueId: string): Promise<LeagueInfo> => 
 export const fetchManagerHistory = async (managerId: number): Promise<ManagerHistory> => {
   try {
     const response = await axios.get(
-      `${FPL_API_BASE_URL}/entry/${managerId}/history/`
+      `${CORS_PROXY}${encodeURIComponent(`${FPL_API_BASE_URL}/entry/${managerId}/history/`)}`
     );
     return response.data;
   } catch (error) {
+    console.error('Error fetching manager history:', error);
     throw new Error('Failed to fetch manager history');
   }
 };
@@ -93,10 +96,11 @@ export const fetchManagerHistory = async (managerId: number): Promise<ManagerHis
 export const fetchManagerInfo = async (managerId: number) => {
   try {
     const response = await axios.get(
-      `${FPL_API_BASE_URL}/entry/${managerId}/`
+      `${CORS_PROXY}${encodeURIComponent(`${FPL_API_BASE_URL}/entry/${managerId}/`)}`
     );
     return response.data;
   } catch (error) {
+    console.error('Error fetching manager info:', error);
     throw new Error('Failed to fetch manager information');
   }
 }; 
