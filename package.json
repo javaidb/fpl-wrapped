@@ -19,6 +19,7 @@
     "framer-motion": "^11.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
     "recharts": "^2.10.4"
   },
   "devDependencies": {
@@ -34,4 +35,4 @@
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   }
-} 
+}
