@@ -18,6 +18,8 @@ import LeagueStats from './components/LeagueStats';
 import Footer from './components/Footer';
 import { fetchLeagueInfo, fetchManagerHistory } from './services/fplApi';
 import type { LeagueInfo, ManagerHistory } from './services/fplApi';
+import CoverPage from './components/CoverPage';
+import ReactDOM from 'react-dom';
 
 const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
 
@@ -136,14 +138,18 @@ function App() {
         wrapper.removeChild(pageClone);
       }
 
-      // Add footer to each page
+      // Add footer to each page (except cover page)
       const footer = document.querySelector('footer');
       if (footer) {
         const footerClone = footer.cloneNode(true) as HTMLElement;
         footerClone.style.backgroundColor = BACKGROUND_COLOR;
-        wrapper.appendChild(footerClone);
+        
+        // Create a new Footer component instance for PDF
+        const pdfFooter = document.createElement('div');
+        ReactDOM.render(<Footer isPdf={true} />, pdfFooter);
+        wrapper.appendChild(pdfFooter);
 
-        const footerCanvas = await html2canvas(footerClone, {
+        const footerCanvas = await html2canvas(pdfFooter, {
           scale: 2,
           logging: false,
           useCORS: true,
@@ -165,9 +171,9 @@ function App() {
         const footerWidth = 210; // A4 width
         const footerHeight = (footerCanvas.height * footerWidth) / footerCanvas.width;
 
-        // Add footer to all pages
+        // Add footer to all pages except the cover page
         const pageCount = pdf.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
+        for (let i = 2; i <= pageCount; i++) { // Start from page 2
           pdf.setPage(i);
           pdf.addImage(
             footerCanvas.toDataURL('image/jpeg', 1.0),
@@ -182,7 +188,7 @@ function App() {
         }
 
         // Clean up
-        wrapper.removeChild(footerClone);
+        wrapper.removeChild(pdfFooter);
       }
 
       // Clean up wrapper
@@ -269,6 +275,7 @@ function App() {
                       Export as PDF
                     </Button>
                   </Box>
+                  <CoverPage leagueInfo={leagueInfo} managerHistories={managerHistories} />
                   <LeagueStats
                     leagueInfo={leagueInfo}
                     managerHistories={managerHistories}
@@ -278,7 +285,7 @@ function App() {
             </div>
           </VStack>
         </Container>
-        <Footer />
+        <Footer isPdf={false} />
       </Box>
     </ChakraProvider>
   );
