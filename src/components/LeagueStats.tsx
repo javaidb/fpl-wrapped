@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { useState, useEffect } from 'react';
 import { LeagueInfo, ManagerHistory } from '../services/fplApi';
-import { FaTrophy, FaArrowUp, FaCouch, FaBolt, FaMedal, FaExchangeAlt, FaPiggyBank, FaRocket, FaChartLine } from 'react-icons/fa';
+import { FaTrophy, FaArrowUp, FaCouch, FaBolt, FaMedal, FaExchangeAlt, FaPiggyBank, FaRocket, FaChartLine, FaBalanceScale } from 'react-icons/fa';
 
 interface LeagueStatsProps {
   leagueInfo: LeagueInfo;
@@ -333,6 +333,29 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       }
     });
 
+    // Calculate Most Consistent Manager (lowest standard deviation in points)
+    let mostConsistentManager = '';
+    let mostConsistentTeam = '';
+    let lowestStdDev = Infinity;
+    let consistentAvg = 0;
+
+    managers.forEach(manager => {
+      const history = managerHistories[manager.entry];
+      if (!history) return;
+
+      const points = history.current.map(gw => gw.points);
+      const avg = points.reduce((a, b) => a + b, 0) / points.length;
+      const variance = points.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / points.length;
+      const stdDev = Math.sqrt(variance);
+
+      if (stdDev < lowestStdDev) {
+        lowestStdDev = stdDev;
+        mostConsistentManager = manager.player_name;
+        mostConsistentTeam = manager.entry_name;
+        consistentAvg = avg;
+      }
+    });
+
     awards.push({
       icon: FaBolt,
       title: 'Highest Scoring Gameweek',
@@ -405,6 +428,15 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       color: 'red.400',
     });
 
+    awards.push({
+      icon: FaBalanceScale,
+      title: 'Most Consistent Manager',
+      description: `Std Dev: ${lowestStdDev.toFixed(1)}`,
+      value: `Avg: ${consistentAvg.toFixed(1)}`,
+      manager: `${mostConsistentManager} (${mostConsistentTeam})`,
+      color: 'teal.400',
+    });
+
     return awards;
   };
 
@@ -467,25 +499,77 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
               <LineChart 
                 data={getPointsData()}
                 style={{ backgroundColor: BACKGROUND_COLOR }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 65 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="rgba(255,255,255,0.1)"
+                  strokeWidth={0.5}
+                />
                 <XAxis 
                   dataKey="gameweek" 
-                  label={{ value: 'Gameweek', position: 'bottom', offset: 0, fill: 'white' }}
+                  label={{ 
+                    value: 'Gameweek', 
+                    position: 'bottom', 
+                    offset: 0, 
+                    fill: 'white',
+                    fontSize: 12,
+                    fontWeight: 'bold'
+                  }}
                   stroke="white"
+                  tick={{ fill: 'white', fontSize: 11 }}
                 />
                 <YAxis 
-                  label={{ value: 'Total Points', angle: -90, position: 'insideLeft', fill: 'white' }}
+                  label={{ 
+                    value: 'Total Points', 
+                    angle: -90, 
+                    position: 'insideLeft', 
+                    fill: 'white',
+                    fontSize: 12,
+                    fontWeight: 'bold'
+                  }}
                   domain={[minPoints - pointsBuffer, maxPoints + pointsBuffer]}
                   tickCount={10}
                   stroke="white"
+                  tick={{ fill: 'white', fontSize: 11 }}
                 />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: BACKGROUND_COLOR, border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
-                  labelStyle={{ color: 'white' }}
+                  contentStyle={{ 
+                    backgroundColor: BACKGROUND_COLOR, 
+                    border: '1px solid rgba(255,255,255,0.2)', 
+                    color: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    padding: '8px 12px'
+                  }}
+                  labelStyle={{ color: 'white', fontWeight: 'bold', marginBottom: '4px' }}
+                  itemStyle={{ padding: '2px 0' }}
+                  cursor={{ strokeWidth: 1 }}
                 />
                 <Legend 
-                  wrapperStyle={{ color: 'white' }}
+                  wrapperStyle={{ 
+                    color: 'white',
+                    paddingTop: '20px',
+                  }}
+                  layout="horizontal"
+                  align="center"
+                  verticalAlign="bottom"
+                  formatter={(value, entry) => (
+                    <Text 
+                      color={managerColors[value]}
+                      fontSize="sm"
+                      fontWeight="medium"
+                      px={2}
+                      transition="all 0.2s"
+                      _hover={{
+                        filter: 'brightness(1.2)',
+                      }}
+                    >
+                      {value}
+                    </Text>
+                  )}
+                  iconSize={10}
+                  iconType="plainline"
                 />
                 {leagueInfo.standings.results.map((manager, index) => (
                   <Line
@@ -495,6 +579,12 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
                     stroke={managerColors[manager.entry_name]}
                     dot={false}
                     strokeWidth={2}
+                    activeDot={{ 
+                      r: 6, 
+                      strokeWidth: 0,
+                      fill: managerColors[manager.entry_name],
+                      filter: 'brightness(1.2)'
+                    }}
                   />
                 ))}
               </LineChart>
@@ -512,26 +602,78 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
               <LineChart 
                 data={getPositionData()}
                 style={{ backgroundColor: BACKGROUND_COLOR }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 65 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="rgba(255,255,255,0.1)"
+                  strokeWidth={0.5}
+                />
                 <XAxis 
                   dataKey="gameweek" 
-                  label={{ value: 'Gameweek', position: 'bottom', offset: 0, fill: 'white' }}
+                  label={{ 
+                    value: 'Gameweek', 
+                    position: 'bottom', 
+                    offset: 0, 
+                    fill: 'white',
+                    fontSize: 12,
+                    fontWeight: 'bold'
+                  }}
                   stroke="white"
+                  tick={{ fill: 'white', fontSize: 11 }}
                 />
                 <YAxis 
                   reversed 
-                  label={{ value: 'Position', angle: -90, position: 'insideLeft', fill: 'white' }}
+                  label={{ 
+                    value: 'Position', 
+                    angle: -90, 
+                    position: 'insideLeft', 
+                    fill: 'white',
+                    fontSize: 12,
+                    fontWeight: 'bold'
+                  }}
                   domain={[1, leagueInfo.standings.results.length]}
                   ticks={Array.from({ length: leagueInfo.standings.results.length }, (_, i) => i + 1)}
                   stroke="white"
+                  tick={{ fill: 'white', fontSize: 11 }}
                 />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: BACKGROUND_COLOR, border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
-                  labelStyle={{ color: 'white' }}
+                  contentStyle={{ 
+                    backgroundColor: BACKGROUND_COLOR, 
+                    border: '1px solid rgba(255,255,255,0.2)', 
+                    color: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    padding: '8px 12px'
+                  }}
+                  labelStyle={{ color: 'white', fontWeight: 'bold', marginBottom: '4px' }}
+                  itemStyle={{ padding: '2px 0' }}
+                  cursor={{ strokeWidth: 1 }}
                 />
                 <Legend 
-                  wrapperStyle={{ color: 'white' }}
+                  wrapperStyle={{ 
+                    color: 'white',
+                    paddingTop: '20px',
+                  }}
+                  layout="horizontal"
+                  align="center"
+                  verticalAlign="bottom"
+                  formatter={(value, entry) => (
+                    <Text 
+                      color={managerColors[value]}
+                      fontSize="sm"
+                      fontWeight="medium"
+                      px={2}
+                      transition="all 0.2s"
+                      _hover={{
+                        filter: 'brightness(1.2)',
+                      }}
+                    >
+                      {value}
+                    </Text>
+                  )}
+                  iconSize={10}
+                  iconType="plainline"
                 />
                 {leagueInfo.standings.results.map((manager, index) => (
                   <Line
@@ -541,6 +683,12 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
                     stroke={managerColors[manager.entry_name]}
                     dot={false}
                     strokeWidth={2}
+                    activeDot={{ 
+                      r: 6, 
+                      strokeWidth: 0,
+                      fill: managerColors[manager.entry_name],
+                      filter: 'brightness(1.2)'
+                    }}
                   />
                 ))}
               </LineChart>
