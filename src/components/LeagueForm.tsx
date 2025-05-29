@@ -11,6 +11,8 @@ import {
   ListItem,
 } from '@chakra-ui/react';
 
+const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
+
 interface LeagueFormProps {
   onSubmit: (leagueId: string) => void;
 }
@@ -26,18 +28,18 @@ const LeagueForm = ({ onSubmit }: LeagueFormProps) => {
   };
 
   return (
-    <>
+    <Box bg={BACKGROUND_COLOR}>
       <Heading
         as="h1"
         size="2xl"
-        bgGradient="linear(to-r, purple.500, pink.500)"
+        bgGradient="linear(to-r, purple.400, pink.400)"
         bgClip="text"
         textAlign="center"
       >
         FPL Wrapped
       </Heading>
       
-      <Text fontSize="xl" textAlign="center" color="gray.600">
+      <Text fontSize="xl" textAlign="center" color="whiteAlpha.900">
         Get insights about your Fantasy Premier League performance
       </Text>
 
@@ -47,16 +49,18 @@ const LeagueForm = ({ onSubmit }: LeagueFormProps) => {
         w="full"
         maxW="md"
         p={8}
-        bg="white"
+        bg="gray.800"
         borderRadius="xl"
-        boxShadow="xl"
+        boxShadow="dark-lg"
         mx="auto"
+        borderColor="whiteAlpha.200"
+        borderWidth="1px"
       >
         <VStack spacing={6}>
           <Box w="full">
-            <Text mb={2} fontWeight="medium">How to find your league ID:</Text>
-            <OrderedList spacing={2} pl={4} color="gray.600" fontSize="sm">
-              <ListItem>Go to the <Link href="https://fantasy.premierleague.com/" isExternal color="purple.500">FPL website</Link></ListItem>
+            <Text mb={2} fontWeight="medium" color="white">How to find your league ID:</Text>
+            <OrderedList spacing={2} pl={4} color="whiteAlpha.800" fontSize="sm">
+              <ListItem>Go to the <Link href="https://fantasy.premierleague.com/" isExternal color="purple.400" _hover={{ color: 'purple.300' }}>FPL website</Link></ListItem>
               <ListItem>Click on your league name</ListItem>
               <ListItem>Copy the number from the URL</ListItem>
             </OrderedList>
@@ -68,6 +72,11 @@ const LeagueForm = ({ onSubmit }: LeagueFormProps) => {
             onChange={(e) => setLeagueId(e.target.value)}
             size="lg"
             type="number"
+            bg="whiteAlpha.100"
+            color="white"
+            _placeholder={{ color: 'whiteAlpha.500' }}
+            _hover={{ bg: 'whiteAlpha.200' }}
+            _focus={{ bg: 'whiteAlpha.200', borderColor: 'purple.400' }}
           />
 
           <Button
@@ -81,7 +90,7 @@ const LeagueForm = ({ onSubmit }: LeagueFormProps) => {
           </Button>
         </VStack>
       </Box>
-    </>
+    </Box>
   );
 };
 

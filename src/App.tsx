@@ -8,6 +8,7 @@ import {
   useToast,
   Spinner,
   Text,
+  extendTheme,
 } from '@chakra-ui/react';
 import { FaFilePdf } from 'react-icons/fa';
 import { jsPDF } from 'jspdf';
@@ -17,6 +18,40 @@ import LeagueStats from './components/LeagueStats';
 import Footer from './components/Footer';
 import { fetchLeagueInfo, fetchManagerHistory } from './services/fplApi';
 import type { LeagueInfo, ManagerHistory } from './services/fplApi';
+
+const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
+
+// Define the custom theme
+const theme = extendTheme({
+  config: {
+    initialColorMode: 'dark',
+    useSystemColorMode: false,
+  },
+  styles: {
+    global: {
+      'html, body': {
+        backgroundColor: BACKGROUND_COLOR,
+        color: 'white',
+      },
+      '#root': {
+        backgroundColor: BACKGROUND_COLOR,
+      },
+      '*::placeholder': {
+        color: 'whiteAlpha.400',
+      },
+      '*, *::before, &::after': {
+        borderColor: 'whiteAlpha.200',
+      },
+    },
+  },
+  colors: {
+    gray: {
+      700: '#2d3748',
+      800: '#1a202c',
+      900: '#171923',
+    },
+  },
+});
 
 function App() {
   const [leagueInfo, setLeagueInfo] = useState<LeagueInfo | null>(null);
@@ -31,39 +66,127 @@ function App() {
     
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(contentRef.current, {
-        scale: 2,
-        logging: false,
-        useCORS: true,
-      });
-      
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let firstPage = true;
-      
-      while (heightLeft >= 0) {
-        if (!firstPage) {
+      // Create a wrapper div for better background control
+      const wrapper = document.createElement('div');
+      wrapper.style.backgroundColor = BACKGROUND_COLOR;
+      wrapper.style.position = 'absolute';
+      wrapper.style.left = '-9999px';
+      wrapper.style.top = '-9999px';
+      document.body.appendChild(wrapper);
+
+      // Get all pages
+      const pages = contentRef.current.querySelectorAll('.pdf-page');
+      const pdf = new jsPDF('p', 'mm', 'a4', true);
+      let isFirstPage = true;
+
+      // Process each page
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i] as HTMLElement;
+        
+        // Add a new page for all pages except the first
+        if (!isFirstPage) {
           pdf.addPage();
         }
+        isFirstPage = false;
+
+        // Clone the page and prepare it for export
+        const pageClone = page.cloneNode(true) as HTMLElement;
+        pageClone.style.backgroundColor = BACKGROUND_COLOR;
+        wrapper.appendChild(pageClone);
+
+        // Create canvas for the current page
+        const canvas = await html2canvas(pageClone, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          backgroundColor: BACKGROUND_COLOR,
+          onclone: (clonedDoc) => {
+            const elements = clonedDoc.getElementsByTagName('*');
+            for (let i = 0; i < elements.length; i++) {
+              const el = elements[i] as HTMLElement;
+              const computedStyle = window.getComputedStyle(el);
+              if (computedStyle.backgroundColor === 'rgba(0, 0, 0, 0)' || 
+                  computedStyle.backgroundColor === 'transparent' ||
+                  computedStyle.backgroundColor === '') {
+                el.style.backgroundColor = BACKGROUND_COLOR;
+              }
+            }
+          }
+        });
+
+        // Calculate dimensions
+        const imgWidth = 210; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // Add the page content with background
+        pdf.setFillColor(38, 38, 38);
+        pdf.rect(0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight(), 'F');
         pdf.addImage(
           canvas.toDataURL('image/jpeg', 1.0),
           'JPEG',
           0,
-          position,
+          0,
           imgWidth,
           imgHeight,
           '',
           'FAST'
         );
-        heightLeft -= pageHeight;
-        position -= pageHeight;
-        firstPage = false;
+
+        // Clean up
+        wrapper.removeChild(pageClone);
       }
+
+      // Add footer to each page
+      const footer = document.querySelector('footer');
+      if (footer) {
+        const footerClone = footer.cloneNode(true) as HTMLElement;
+        footerClone.style.backgroundColor = BACKGROUND_COLOR;
+        wrapper.appendChild(footerClone);
+
+        const footerCanvas = await html2canvas(footerClone, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          backgroundColor: BACKGROUND_COLOR,
+          onclone: (clonedDoc) => {
+            const elements = clonedDoc.getElementsByTagName('*');
+            for (let i = 0; i < elements.length; i++) {
+              const el = elements[i] as HTMLElement;
+              const computedStyle = window.getComputedStyle(el);
+              if (computedStyle.backgroundColor === 'rgba(0, 0, 0, 0)' || 
+                  computedStyle.backgroundColor === 'transparent' ||
+                  computedStyle.backgroundColor === '') {
+                el.style.backgroundColor = BACKGROUND_COLOR;
+              }
+            }
+          }
+        });
+
+        const footerWidth = 210; // A4 width
+        const footerHeight = (footerCanvas.height * footerWidth) / footerCanvas.width;
+
+        // Add footer to all pages
+        const pageCount = pdf.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          pdf.setPage(i);
+          pdf.addImage(
+            footerCanvas.toDataURL('image/jpeg', 1.0),
+            'JPEG',
+            0,
+            297 - footerHeight, // A4 height - footer height
+            footerWidth,
+            footerHeight,
+            '',
+            'FAST'
+          );
+        }
+
+        // Clean up
+        wrapper.removeChild(footerClone);
+      }
+
+      // Clean up wrapper
+      document.body.removeChild(wrapper);
       
       pdf.save('fpl-wrapped-report.pdf');
       toast({
@@ -119,23 +242,23 @@ function App() {
   };
 
   return (
-    <ChakraProvider>
-      <Box minH="100vh" bg="gray.100" position="relative" pb="16">
-        <Container maxW="container.xl" pt={8}>
-          <VStack spacing={8} align="stretch">
+    <ChakraProvider theme={theme}>
+      <Box minH="100vh" bg={BACKGROUND_COLOR} position="relative" pb="16">
+        <Container maxW="container.xl" pt={8} bg={BACKGROUND_COLOR}>
+          <VStack spacing={8} align="stretch" bg={BACKGROUND_COLOR}>
             <LeagueForm onSubmit={handleSubmit} />
             
             {isLoading && (
-              <Box textAlign="center" py={10}>
+              <Box textAlign="center" py={10} bg={BACKGROUND_COLOR}>
                 <Spinner size="xl" />
                 <Text mt={4}>Loading league data...</Text>
               </Box>
             )}
 
-            <div ref={contentRef}>
+            <div ref={contentRef} style={{ backgroundColor: BACKGROUND_COLOR }}>
               {leagueInfo && Object.keys(managerHistories).length > 0 && (
                 <>
-                  <Box mb={4} textAlign="right">
+                  <Box mb={4} textAlign="right" bg={BACKGROUND_COLOR}>
                     <Button
                       leftIcon={<FaFilePdf />}
                       colorScheme="red"

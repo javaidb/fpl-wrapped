@@ -33,6 +33,32 @@ const getOrdinalSuffix = (n: number): string => {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
+const DISTINCT_COLORS = [
+  '#FF6B6B', // Coral Red
+  '#4ECDC4', // Turquoise
+  '#45B7D1', // Sky Blue
+  '#96CEB4', // Sage Green
+  '#FFEEAD', // Cream Yellow
+  '#D4A5A5', // Dusty Rose
+  '#9370DB', // Medium Purple
+  '#20B2AA', // Light Sea Green
+  '#FFB6C1', // Light Pink
+  '#DDA0DD', // Plum
+  '#F0E68C', // Khaki
+  '#98FB98', // Pale Green
+  '#DEB887', // Burlywood
+  '#87CEEB', // Sky Blue
+  '#FFA07A', // Light Salmon
+  '#E6E6FA', // Lavender
+  '#F08080', // Light Coral
+  '#90EE90', // Light Green
+  '#FFD700', // Gold
+  '#BA55D3'  // Medium Orchid
+];
+
+const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
+const CHART_BG_COLOR = BACKGROUND_COLOR; // Use the same color for consistency
+
 const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories }) => {
   // Find the latest gameweek with data
   const latestGameweek = Math.max(
@@ -110,18 +136,13 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
     return data;
   };
 
-  const getRandomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
+  const getDistinctColor = (index: number) => {
+    return DISTINCT_COLORS[index % DISTINCT_COLORS.length];
   };
 
-  // Generate and store colors for each manager
-  const managerColors = leagueInfo.standings.results.reduce((acc, manager) => {
-    acc[manager.entry_name] = getRandomColor();
+  // Update the manager colors assignment
+  const managerColors = leagueInfo.standings.results.reduce((acc, manager, index) => {
+    acc[manager.entry_name] = getDistinctColor(index);
     return acc;
   }, {} as { [key: string]: string });
 
@@ -388,200 +409,146 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
   };
 
   return (
-    <Grid
-      templateColumns={{ base: "1fr", xl: "1fr 300px" }}
-      gap={8}
-      w="full"
-      p={4}
-    >
-      {/* Main Content */}
-      <VStack spacing={8} w="full">
-        <Heading size="xl">League Statistics</Heading>
-
-        {/* Gameweek Range Selector */}
-        <HStack spacing={4} w="full" justify="center">
-          <FormControl w="auto">
-            <FormLabel>Start Gameweek</FormLabel>
-            <Select
-              value={startGw}
-              onChange={(e) => setStartGw(Number(e.target.value))}
-              width="120px"
-            >
-              {Array.from({ length: endGw }, (_, i) => i + 1).map((gw) => (
-                <option key={gw} value={gw}>
-                  GW {gw}
-                </option>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl w="auto">
-            <FormLabel>End Gameweek</FormLabel>
-            <Select
-              value={endGw}
-              onChange={(e) => setEndGw(Number(e.target.value))}
-              width="120px"
-            >
-              {Array.from({ length: latestGameweek - startGw + 1 }, (_, i) => i + startGw).map((gw) => (
-                <option key={gw} value={gw}>
-                  GW {gw}
-                </option>
-              ))}
-            </Select>
-          </FormControl>
-        </HStack>
-
-        <VStack spacing={12} w="full">
-          {/* Points Over Time Graph */}
-          <Box bg="white" p={6} borderRadius="xl" boxShadow="md" w="full" h={`${graphHeight}px`} position="relative">
-            <Heading size="md" mb={4}>Points Over Time</Heading>
-            <Box position="absolute" top={0} right={0} bottom={0} width={`${legendWidth}px`} p={4} overflowY="auto">
-              {leagueInfo.standings.results.map((manager) => (
-                <HStack key={manager.entry} mb={2}>
-                  <Box w="3" h="3" bg={managerColors[manager.entry_name]} borderRadius="sm" />
-                  <Text fontSize="sm" noOfLines={1}>{manager.entry_name}</Text>
-                </HStack>
-              ))}
-            </Box>
-            <Box pr={`${legendWidth + 16}px`} h="90%">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={getPointsData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="gameweek" 
-                    label={{ value: 'Gameweek', position: 'bottom', offset: 0 }}
-                  />
-                  <YAxis 
-                    label={{ value: 'Total Points', angle: -90, position: 'insideLeft' }}
-                    domain={[minPoints - pointsBuffer, maxPoints + pointsBuffer]}
-                    tickCount={10}
-                  />
-                  <Tooltip />
-                  {leagueInfo.standings.results.map((manager) => (
-                    <Line
-                      key={manager.entry}
-                      type="monotone"
-                      dataKey={manager.entry_name}
-                      stroke={managerColors[manager.entry_name]}
-                      dot={false}
-                      strokeWidth={2}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          </Box>
-
-          {/* Position Over Time Graph */}
-          <Box bg="white" p={6} borderRadius="xl" boxShadow="md" w="full" h={`${graphHeight}px`} position="relative">
-            <Heading size="md" mb={4}>League Position Over Time</Heading>
-            <Box position="absolute" top={0} right={0} bottom={0} width={`${legendWidth}px`} p={4} overflowY="auto">
-              {leagueInfo.standings.results.map((manager) => (
-                <HStack key={manager.entry} mb={2}>
-                  <Box w="3" h="3" bg={managerColors[manager.entry_name]} borderRadius="sm" />
-                  <Text fontSize="sm" noOfLines={1}>{manager.entry_name}</Text>
-                </HStack>
-              ))}
-            </Box>
-            <Box pr={`${legendWidth + 16}px`} h="90%">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={getPositionData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="gameweek" 
-                    label={{ value: 'Gameweek', position: 'bottom', offset: 0 }}
-                  />
-                  <YAxis 
-                    reversed 
-                    label={{ value: 'Position', angle: -90, position: 'insideLeft' }}
-                    domain={[1, leagueInfo.standings.results.length]}
-                    ticks={Array.from({ length: leagueInfo.standings.results.length }, (_, i) => i + 1)}
-                  />
-                  <Tooltip />
-                  {leagueInfo.standings.results.map((manager) => (
-                    <Line
-                      key={manager.entry}
-                      type="monotone"
-                      dataKey={manager.entry_name}
-                      stroke={managerColors[manager.entry_name]}
-                      dot={false}
-                      strokeWidth={2}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          </Box>
-
-          {/* League Summary Box */}
-          <Box bg="white" p={6} borderRadius="xl" boxShadow="md" w="full">
-            <Heading size="md" mb={4}>League Summary</Heading>
-            <VStack align="start" spacing={3}>
-              <Text>
-                <strong>League Name:</strong> {leagueInfo.league.name}
-              </Text>
-              <Text>
-                <strong>Total Managers:</strong> {leagueInfo.standings.results.length}
-              </Text>
-              <Text>
-                <strong>Points Range:</strong>{' '}
-                {Math.min(...leagueInfo.standings.results.map(m => m.total))} -{' '}
-                {Math.max(...leagueInfo.standings.results.map(m => m.total))}
-              </Text>
-            </VStack>
-          </Box>
-        </VStack>
-      </VStack>
-
+    <VStack spacing={12} w="full" bg={BACKGROUND_COLOR}>
       {/* Awards Section */}
-      <Box>
-        <VStack 
+      <Box w="full" className="pdf-page awards-page" bg={BACKGROUND_COLOR}>
+        <Heading size="xl" mb={8} textAlign="center" color="white">Awards & Achievements</Heading>
+        <SimpleGrid 
+          columns={{ base: 1, md: 2, lg: 3 }} 
           spacing={6}
-          position="sticky"
-          top={4}
-          bg="white"
-          p={6}
-          borderRadius="xl"
-          boxShadow="md"
+          mx="auto"
+          maxW="1200px"
+          px={4}
+          bg={BACKGROUND_COLOR}
         >
-          <Heading size="lg">Awards</Heading>
-          <VStack spacing={6} w="full" align="stretch">
-            {calculateAwards().map((award, index) => (
-              <Box 
-                key={index}
-                p={4}
-                borderRadius="lg"
-                border="1px"
-                borderColor="gray.200"
-                _hover={{ shadow: "md" }}
-                transition="all 0.2s"
-              >
-                <HStack spacing={4}>
-                  <Icon 
-                    as={award.icon} 
-                    boxSize={8} 
-                    color={award.color}
-                  />
-                  <VStack align="start" spacing={1}>
-                    <Text fontWeight="bold">{award.title}</Text>
-                    <Text fontSize="sm" color="gray.600">
-                      {award.manager}
+          {calculateAwards().map((award, index) => (
+            <Box 
+              key={index}
+              p={6}
+              borderRadius="lg"
+              border="1px"
+              borderColor="whiteAlpha.200"
+              bg={BACKGROUND_COLOR}
+              _hover={{ shadow: "dark-lg" }}
+              transition="all 0.2s"
+            >
+              <HStack spacing={4}>
+                <Icon 
+                  as={award.icon} 
+                  boxSize={8} 
+                  color={award.color}
+                />
+                <VStack align="start" spacing={1}>
+                  <Text fontWeight="bold" color="white">{award.title}</Text>
+                  <Text fontSize="sm" color="whiteAlpha.800">
+                    {award.manager}
+                  </Text>
+                  <HStack spacing={2}>
+                    <Text fontSize="sm" color="whiteAlpha.600">
+                      {award.description}
                     </Text>
-                    <HStack spacing={2}>
-                      <Text fontSize="sm" color="gray.500">
-                        {award.description}
-                      </Text>
-                      <Text fontSize="sm" fontWeight="bold">
-                        {award.value}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                </HStack>
-              </Box>
-            ))}
-          </VStack>
-        </VStack>
+                    <Text fontSize="sm" fontWeight="bold" color="white">
+                      {award.value}
+                    </Text>
+                  </HStack>
+                </VStack>
+              </HStack>
+            </Box>
+          ))}
+        </SimpleGrid>
       </Box>
-    </Grid>
+
+      {/* Points Over Time Graph */}
+      <Box w="full" className="pdf-page points-page" bg={BACKGROUND_COLOR}>
+        <Box bg={BACKGROUND_COLOR} p={6} borderRadius="xl" boxShadow="dark-lg" w="full" h={`${graphHeight}px`}>
+          <Heading size="md" mb={4} color="white">Points Over Time</Heading>
+          <Box h="90%" bg={BACKGROUND_COLOR}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart 
+                data={getPointsData()}
+                style={{ backgroundColor: BACKGROUND_COLOR }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis 
+                  dataKey="gameweek" 
+                  label={{ value: 'Gameweek', position: 'bottom', offset: 0, fill: 'white' }}
+                  stroke="white"
+                />
+                <YAxis 
+                  label={{ value: 'Total Points', angle: -90, position: 'insideLeft', fill: 'white' }}
+                  domain={[minPoints - pointsBuffer, maxPoints + pointsBuffer]}
+                  tickCount={10}
+                  stroke="white"
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: BACKGROUND_COLOR, border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                  labelStyle={{ color: 'white' }}
+                />
+                <Legend 
+                  wrapperStyle={{ color: 'white' }}
+                />
+                {leagueInfo.standings.results.map((manager, index) => (
+                  <Line
+                    key={manager.entry}
+                    type="monotone"
+                    dataKey={manager.entry_name}
+                    stroke={managerColors[manager.entry_name]}
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* League Position Over Time Graph */}
+      <Box w="full" className="pdf-page position-page" bg={BACKGROUND_COLOR}>
+        <Box bg={BACKGROUND_COLOR} p={6} borderRadius="xl" boxShadow="dark-lg" w="full" h={`${graphHeight}px`}>
+          <Heading size="md" mb={4} color="white">League Position Over Time</Heading>
+          <Box h="90%" bg={BACKGROUND_COLOR}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart 
+                data={getPositionData()}
+                style={{ backgroundColor: BACKGROUND_COLOR }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis 
+                  dataKey="gameweek" 
+                  label={{ value: 'Gameweek', position: 'bottom', offset: 0, fill: 'white' }}
+                  stroke="white"
+                />
+                <YAxis 
+                  reversed 
+                  label={{ value: 'Position', angle: -90, position: 'insideLeft', fill: 'white' }}
+                  domain={[1, leagueInfo.standings.results.length]}
+                  ticks={Array.from({ length: leagueInfo.standings.results.length }, (_, i) => i + 1)}
+                  stroke="white"
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: BACKGROUND_COLOR, border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                  labelStyle={{ color: 'white' }}
+                />
+                <Legend 
+                  wrapperStyle={{ color: 'white' }}
+                />
+                {leagueInfo.standings.results.map((manager, index) => (
+                  <Line
+                    key={manager.entry}
+                    type="monotone"
+                    dataKey={manager.entry_name}
+                    stroke={managerColors[manager.entry_name]}
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+        </Box>
+      </Box>
+    </VStack>
   );
 };
 
