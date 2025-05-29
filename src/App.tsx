@@ -46,11 +46,17 @@ function App() {
     try {
       // Fetch league information
       const league = await fetchLeagueInfo(leagueId);
+      
+      if (!league.standings.results.length) {
+        throw new Error('No managers found in this league. Please check if the league ID is correct.');
+      }
+      
       setLeagueInfo(league);
 
       // Fetch manager histories
       const totalManagers = league.standings.results.length;
       const histories: Record<number, ManagerHistory> = {};
+      let failedManagers = 0;
       
       for (let i = 0; i < totalManagers; i++) {
         const manager = league.standings.results[i];
@@ -60,16 +66,40 @@ function App() {
           setLoadingProgress(((i + 1) / totalManagers) * 100);
         } catch (error) {
           console.error(`Failed to fetch history for manager ${manager.entry_name}`);
+          failedManagers++;
         }
       }
 
+      if (failedManagers === totalManagers) {
+        throw new Error('Could not fetch data for any managers. The FPL API might be temporarily unavailable.');
+      }
+
       setManagerHistories(histories);
+      
+      if (failedManagers > 0) {
+        toast({
+          title: 'Partial Data Loaded',
+          description: `Loaded data for ${totalManagers - failedManagers} out of ${totalManagers} managers.`,
+          status: 'warning',
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'League data loaded successfully!',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch league data. Please try again later.';
       toast({
         title: 'Error',
-        description: 'Failed to fetch league data. Please make sure the league ID is correct.',
+        description: errorMessage,
         status: 'error',
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
     } finally {
