@@ -1,4 +1,4 @@
-import { Box, HStack, Tooltip, Text, Center, VStack } from '@chakra-ui/react';
+import { Box, HStack, Tooltip, Text, VStack } from '@chakra-ui/react';
 import { LeagueInfo, ManagerHistory } from '../services/fplApi';
 
 interface PercentileBarProps {
@@ -28,13 +28,16 @@ const PercentileBar: React.FC<PercentileBarProps> = ({ leagueInfo, managerHistor
     return ((TOTAL_FPL_PLAYERS - rank) / TOTAL_FPL_PLAYERS) * 100;
   };
 
-  // Define color stops and their ranges
+  // Define color stops and their ranges with extended percentiles
   const colorRanges = [
     { threshold: 1, color: 'purple.500', label: 'Top 1%' },
     { threshold: 5, color: 'blue.400', label: 'Top 5%' },
     { threshold: 10, color: 'blue.600', label: 'Top 10%' },
-    { threshold: 20, color: 'blue.800', label: 'Top 20%' },
-    { threshold: 100, color: 'blackAlpha.800', label: 'Rest' }
+    { threshold: 20, color: 'teal.500', label: 'Top 20%' },
+    { threshold: 30, color: 'cyan.500', label: 'Top 30%' },
+    { threshold: 40, color: 'green.500', label: 'Top 40%' },
+    { threshold: 50, color: 'yellow.500', label: 'Top 50%' },
+    { threshold: 100, color: 'gray.600', label: 'Rest' }
   ];
 
   const getColorAndLabel = (percentile: number) => {
@@ -46,8 +49,28 @@ const PercentileBar: React.FC<PercentileBarProps> = ({ leagueInfo, managerHistor
     return colorRanges[colorRanges.length - 1];
   };
 
+  // Group managers by their percentile range
+  const managerGroups = sortedManagers.reduce((groups, manager, index) => {
+    const percentile = getPercentile(manager.globalRank);
+    const range = getColorAndLabel(percentile);
+    if (!groups[range.threshold]) {
+      groups[range.threshold] = {
+        range,
+        managers: [],
+        startIndex: index
+      };
+    }
+    groups[range.threshold].managers.push({
+      ...manager,
+      displayRank: index + 1,
+      percentile
+    });
+    return groups;
+  }, {} as Record<number, { range: typeof colorRanges[0], managers: any[], startIndex: number }>);
+
   return (
-    <VStack w="full" spacing={1} align="stretch">
+    <VStack w="full" spacing={4} align="stretch">
+      {/* Bars */}
       <HStack w="full" spacing={1} align="stretch" h="50px">
         {sortedManagers.map((manager, index) => {
           const percentile = getPercentile(manager.globalRank);
@@ -76,53 +99,84 @@ Percentile: ${percentile.toFixed(2)}%`}
                 }}
                 cursor="pointer"
               >
-                <Center 
+                <Text
                   position="absolute"
-                  top="0"
-                  left="0"
-                  right="0"
-                  bottom="0"
+                  top="50%"
+                  left="50%"
+                  transform="translate(-50%, -50%)"
+                  color="white"
+                  fontSize="sm"
+                  fontWeight="bold"
+                  textShadow="1px 1px 2px rgba(0,0,0,0.5)"
                 >
-                  <Text
-                    color="white"
-                    fontSize="sm"
-                    fontWeight="bold"
-                    textShadow="1px 1px 2px rgba(0,0,0,0.5)"
-                  >
-                    {displayRank}
-                  </Text>
-                </Center>
+                  {displayRank}
+                </Text>
               </Box>
             </Tooltip>
           );
         })}
       </HStack>
 
-      {/* Percentile range indicators */}
-      <HStack 
-        w="full" 
-        justify="space-between" 
-        px={1} 
-        pt={2}
-        borderTop="1px solid"
-        borderColor="whiteAlpha.200"
-      >
-        {colorRanges.map((range, index) => (
-          <Box 
-            key={range.threshold} 
-            textAlign={index === 0 ? 'left' : index === colorRanges.length - 1 ? 'right' : 'center'}
-            flex={1}
-          >
-            <Text 
-              fontSize="xs" 
-              color="whiteAlpha.800"
-              fontWeight="medium"
+      {/* Percentile Group Markers */}
+      <Box position="relative" h="24px" mt={2}>
+        {Object.values(managerGroups).map(({ range, managers, startIndex }) => {
+          if (range.threshold === 100) return null; // Don't show marker for "Rest"
+          
+          const groupWidth = (managers.length / sortedManagers.length) * 100;
+          const startPosition = (startIndex / sortedManagers.length) * 100;
+          
+          return (
+            <Box
+              key={range.threshold}
+              position="absolute"
+              left={`${startPosition}%`}
+              width={`${groupWidth}%`}
+              top={0}
+              h="full"
             >
-              {range.label}
-            </Text>
-          </Box>
-        ))}
-      </HStack>
+              {/* Vertical lines at start and end of group */}
+              <Box
+                position="absolute"
+                left={0}
+                top={0}
+                w="1px"
+                h="8px"
+                bg={range.color}
+              />
+              <Box
+                position="absolute"
+                right={0}
+                top={0}
+                w="1px"
+                h="8px"
+                bg={range.color}
+              />
+              {/* Horizontal line connecting vertical lines */}
+              <Box
+                position="absolute"
+                left={0}
+                top="8px"
+                w="full"
+                h="1px"
+                bg={range.color}
+              />
+              {/* Label */}
+              <Text
+                position="absolute"
+                left="50%"
+                top="12px"
+                transform="translateX(-50%)"
+                fontSize="xs"
+                color="whiteAlpha.900"
+                whiteSpace="nowrap"
+                textAlign="center"
+              >
+                {range.label}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
     </VStack>
   );
 };
