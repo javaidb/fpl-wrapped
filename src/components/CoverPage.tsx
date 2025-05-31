@@ -1,8 +1,8 @@
-import { Box, Heading, Text, SimpleGrid, VStack, HStack, Circle, Divider } from '@chakra-ui/react';
+import { Box, Heading, Text, SimpleGrid, VStack, HStack, Circle, Divider, Badge } from '@chakra-ui/react';
 import { LeagueInfo, ManagerHistory } from '../services/fplApi';
 import { SiPremierleague } from 'react-icons/si';
 import { Icon } from '@chakra-ui/react';
-import { FaTrophy, FaChartLine, FaUsers } from 'react-icons/fa';
+import { FaTrophy, FaChartLine, FaUsers, FaMedal } from 'react-icons/fa';
 import PercentileBar from './PercentileBar';
 
 const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
@@ -11,6 +11,19 @@ interface CoverPageProps {
   leagueInfo: LeagueInfo;
   managerHistories: Record<number, ManagerHistory>;
 }
+
+const getPositionIcon = (position: number) => {
+  switch (position) {
+    case 1:
+      return { icon: FaMedal, color: 'yellow.400', label: '1st' };
+    case 2:
+      return { icon: FaMedal, color: 'gray.400', label: '2nd' };
+    case 3:
+      return { icon: FaMedal, color: 'orange.400', label: '3rd' };
+    default:
+      return null;
+  }
+};
 
 const CoverPage: React.FC<CoverPageProps> = ({ leagueInfo, managerHistories }) => {
   // Split managers into columns (10 per column)
@@ -88,13 +101,12 @@ const CoverPage: React.FC<CoverPageProps> = ({ leagueInfo, managerHistories }) =
                 letterSpacing="wider"
                 bgClip="text"
                 bgGradient="linear(to-r, purple.400, blue.400, purple.400)"
-                textTransform="uppercase"
-                textShadow="2px 2px 4px rgba(0,0,0,0.2)"
                 style={{
-                  WebkitTextStroke: '1px rgba(255,255,255,0.1)'
+                  WebkitTextStroke: '1px rgba(255,255,255,0.1)',
+                  fontFamily: "'Playfair Display', serif"
                 }}
               >
-                FPL WRAPPED
+                <Text as="span" textTransform="uppercase">FPL</Text> Wrapped
               </Text>
             </Box>
             <Text 
@@ -105,7 +117,7 @@ const CoverPage: React.FC<CoverPageProps> = ({ leagueInfo, managerHistories }) =
               fontWeight="semibold"
               textShadow="0 0 10px rgba(147, 112, 219, 0.3)"
             >
-              Season 2023/24
+              Season 2024/25
             </Text>
           </VStack>
         </VStack>
@@ -169,33 +181,57 @@ const CoverPage: React.FC<CoverPageProps> = ({ leagueInfo, managerHistories }) =
             >
               {managerColumns.map((column, colIndex) => (
                 <VStack key={colIndex} align="start" spacing={3}>
-                  {column.map((manager, index) => (
-                    <HStack key={manager.entry} spacing={3} align="center">
-                      <Text 
-                        color="purple.400" 
-                        fontSize="sm"
-                        fontWeight="bold"
-                        w="24px"
-                      >
-                        {(colIndex * 10) + index + 1}.
-                      </Text>
-                      <VStack spacing={0} align="start">
-                        <Text 
-                          color="white"
-                          fontSize="sm"
-                          fontWeight="semibold"
-                        >
-                          {manager.entry_name}
-                        </Text>
-                        <Text 
-                          color="whiteAlpha.700"
-                          fontSize="xs"
-                        >
-                          {manager.player_name}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  ))}
+                  {column.map((manager, index) => {
+                    const position = (colIndex * 10) + index + 1;
+                    const positionInfo = getPositionIcon(position);
+                    
+                    return (
+                      <HStack key={manager.entry} spacing={3} align="center">
+                        <Box w="24px">
+                          {positionInfo ? (
+                            <Icon 
+                              as={positionInfo.icon} 
+                              color={positionInfo.color}
+                              boxSize={5}
+                            />
+                          ) : (
+                            <Text 
+                              color="purple.400" 
+                              fontSize="sm"
+                              fontWeight="bold"
+                            >
+                              {position}.
+                            </Text>
+                          )}
+                        </Box>
+                        <VStack spacing={0} align="start">
+                          <HStack spacing={2}>
+                            <Text 
+                              color="white"
+                              fontSize="sm"
+                              fontWeight="semibold"
+                            >
+                              {manager.entry_name}
+                            </Text>
+                            {positionInfo && (
+                              <Badge 
+                                colorScheme={position === 1 ? "yellow" : position === 2 ? "gray" : "orange"}
+                                fontSize="xs"
+                              >
+                                {positionInfo.label}
+                              </Badge>
+                            )}
+                          </HStack>
+                          <Text 
+                            color="whiteAlpha.700"
+                            fontSize="xs"
+                          >
+                            {manager.player_name}
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    );
+                  })}
                 </VStack>
               ))}
             </SimpleGrid>
