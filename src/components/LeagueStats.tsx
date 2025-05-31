@@ -12,6 +12,7 @@ import {
 import { useState, useEffect } from 'react';
 import { LeagueInfo, ManagerHistory } from '../services/fplApi';
 import { FaTrophy, FaArrowUp, FaCouch, FaBolt, FaMedal, FaExchangeAlt, FaPiggyBank, FaRocket, FaChartLine, FaBalanceScale } from 'react-icons/fa';
+import HistoricalStats from './HistoricalStats';
 
 interface LeagueStatsProps {
   leagueInfo: LeagueInfo;
@@ -695,6 +696,14 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
             </ResponsiveContainer>
           </Box>
         </Box>
+      </Box>
+
+      {/* Historical Stats Section */}
+      <Box w="full" className="pdf-page historical-page" bg={BACKGROUND_COLOR}>
+        <HistoricalStats 
+          leagueInfo={leagueInfo}
+          managerHistories={managerHistories}
+        />
       </Box>
     </VStack>
   );
