@@ -60,6 +60,9 @@ const DISTINCT_COLORS = [
 const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
 const CHART_BG_COLOR = BACKGROUND_COLOR; // Use the same color for consistency
 
+const AWARDS_BG_COLOR = "rgb(0, 255, 133)";
+const AWARDS_TEXT_COLOR = "rgb(56, 0, 60)";
+
 const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories }) => {
   // Find the latest gameweek with data
   const latestGameweek = Math.max(
@@ -444,15 +447,30 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
   return (
     <VStack spacing={12} w="full" bg={BACKGROUND_COLOR}>
       {/* Awards Section */}
-      <Box w="full" className="pdf-page awards-page" bg={BACKGROUND_COLOR}>
-        <Heading size="xl" mb={8} textAlign="center" color="white">Awards & Achievements</Heading>
+      <Box 
+        w="full" 
+        className="pdf-page awards-page" 
+        bg={AWARDS_BG_COLOR}
+        py={12}
+        position="relative"
+        borderRadius="xl"
+        overflow="hidden"
+      >
+        <Heading 
+          size="xl" 
+          mb={8} 
+          textAlign="center" 
+          color={AWARDS_TEXT_COLOR}
+          fontWeight="black"
+        >
+          Awards & Achievements
+        </Heading>
         <SimpleGrid 
           columns={{ base: 1, md: 2, lg: 3 }} 
           spacing={6}
           mx="auto"
           maxW="1200px"
           px={4}
-          bg={BACKGROUND_COLOR}
         >
           {calculateAwards().map((award, index) => (
             <Box 
@@ -460,27 +478,62 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
               p={6}
               borderRadius="lg"
               border="1px"
-              borderColor="whiteAlpha.200"
-              bg={BACKGROUND_COLOR}
-              _hover={{ shadow: "dark-lg" }}
+              borderColor={`${AWARDS_TEXT_COLOR}33`}
+              bg={`${AWARDS_TEXT_COLOR}0a`}
+              _hover={{ 
+                transform: "translateY(-2px)",
+                boxShadow: "xl",
+                borderColor: `${AWARDS_TEXT_COLOR}66`
+              }}
               transition="all 0.2s"
+              position="relative"
+              overflow="hidden"
             >
-              <HStack spacing={4}>
+              <Box
+                position="absolute"
+                top={0}
+                left={0}
+                right={0}
+                bottom={0}
+                bg="white"
+                opacity={0.05}
+                borderRadius="lg"
+              />
+              <HStack spacing={4} position="relative">
                 <Icon 
                   as={award.icon} 
                   boxSize={8} 
-                  color={award.color}
+                  color={AWARDS_TEXT_COLOR}
+                  opacity={0.9}
                 />
                 <VStack align="start" spacing={1}>
-                  <Text fontWeight="bold" color="white">{award.title}</Text>
-                  <Text fontSize="sm" color="whiteAlpha.800">
+                  <Text 
+                    fontWeight="bold" 
+                    color={AWARDS_TEXT_COLOR}
+                    fontSize="lg"
+                  >
+                    {award.title}
+                  </Text>
+                  <Text 
+                    fontSize="sm" 
+                    color={AWARDS_TEXT_COLOR}
+                    opacity={0.8}
+                  >
                     {award.manager}
                   </Text>
                   <HStack spacing={2}>
-                    <Text fontSize="sm" color="whiteAlpha.600">
+                    <Text 
+                      fontSize="sm" 
+                      color={AWARDS_TEXT_COLOR}
+                      opacity={0.7}
+                    >
                       {award.description}
                     </Text>
-                    <Text fontSize="sm" fontWeight="bold" color="white">
+                    <Text 
+                      fontSize="sm" 
+                      fontWeight="bold" 
+                      color={AWARDS_TEXT_COLOR}
+                    >
                       {award.value}
                     </Text>
                   </HStack>
