@@ -173,11 +173,34 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
     let maxGameweekManager = '';
     let maxGameweekNumber = 0;
     let maxGameweekTeam = '';
+    let maxGameweekRank = 0;
 
     let maxBenchPoints = 0;
     let maxBenchManager = '';
     let maxBenchGameweek = 0;
     let maxBenchTeam = '';
+
+    let maxTripleCaptainPoints = 0;
+    let maxTripleCaptainManager = '';
+    let maxTripleCaptainTeam = '';
+    let maxTripleCaptainGW = 0;
+    let maxTripleCaptainPlayer = '';
+
+    let maxBenchBoostPoints = 0;
+    let maxBenchBoostManager = '';
+    let maxBenchBoostTeam = '';
+    let maxBenchBoostGW = 0;
+
+    let totalTransfersByManager: { [key: string]: { 
+      transfers: number, 
+      manager: string, 
+      team: string 
+    } } = {};
+
+    let maxCaptainPoints = 0;
+    let maxCaptainManager = '';
+    let maxCaptainTeam = '';
+    let maxCaptainGW = 0;
 
     let biggestRankImprovement = 0;
     let rankImprovementManager = '';
@@ -204,6 +227,7 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
     let bestGameweekRankManager = '';
     let bestGameweekRankGW = 0;
     let bestGameweekRankTeam = '';
+    let bestGameweekRankPoints = 0;
 
     let biggestLeagueRankChange = 0;
     let leagueRankChangeManager = '';
@@ -213,6 +237,12 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
     let leagueRankStartGW = 0;
     let leagueRankEndGW = 0;
 
+    let maxTransferCost = 0;
+    let maxTransferCostManager = '';
+    let maxTransferCostTeam = '';
+    let maxTransferCostGW = 0;
+    let maxTransferCostTransfers = 0;
+
     // Create a map to store each manager's league positions over time
     const managerLeaguePositions: Map<number, { gw: number, position: number }[]> = new Map();
 
@@ -221,8 +251,18 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       const history = managerHistories[manager.entry];
       if (!history) return;
 
+      // Initialize total transfers for this manager before the gameweek loop
+      totalTransfersByManager[manager.entry] = {
+        transfers: 0,
+        manager: manager.player_name,
+        team: manager.entry_name
+      };
+
       const positions: { gw: number, position: number }[] = [];
       history.current.forEach((gw, index) => {
+        // Add to total transfers for this gameweek
+        totalTransfersByManager[manager.entry].transfers += gw.event_transfers;
+
         // Get the league position for this gameweek
         const gwPoints = gw.total_points;
         let position = 1;
@@ -248,14 +288,33 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
           maxGameweekManager = manager.player_name;
           maxGameweekTeam = manager.entry_name;
           maxGameweekNumber = index + 1;
+          maxGameweekRank = gw.rank;
         }
 
-        // Most points on bench
+        // Track highest transfer cost
+        if (gw.event_transfers_cost > maxTransferCost) {
+          maxTransferCost = gw.event_transfers_cost;
+          maxTransferCostManager = manager.player_name;
+          maxTransferCostTeam = manager.entry_name;
+          maxTransferCostGW = index + 1;
+          maxTransferCostTransfers = gw.event_transfers;
+        }
+
+        // Track captain points (assuming it's available in the API response)
         if (gw.points_on_bench > maxBenchPoints) {
           maxBenchPoints = gw.points_on_bench;
           maxBenchManager = manager.player_name;
           maxBenchTeam = manager.entry_name;
           maxBenchGameweek = index + 1;
+        }
+
+        // Track captain points
+        const captainPoints = gw.points - gw.points_on_bench;  // This is a rough approximation
+        if (captainPoints > maxCaptainPoints) {
+          maxCaptainPoints = captainPoints;
+          maxCaptainManager = manager.player_name;
+          maxCaptainTeam = manager.entry_name;
+          maxCaptainGW = index + 1;
         }
 
         // Best overall rank
@@ -289,7 +348,35 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
           bestGameweekRankManager = manager.player_name;
           bestGameweekRankTeam = manager.entry_name;
           bestGameweekRankGW = index + 1;
+          bestGameweekRankPoints = gw.points;
         }
+
+        // Check for chip usage and points
+        history.chips?.forEach(chip => {
+          const gwIndex = chip.event - 1;
+          const gw = history.current[gwIndex];
+          if (!gw) return;
+
+          if (chip.name === '3xc') {
+            // For triple captain, we want just the captain's points (before tripling)
+            const captainPoints = Math.round(gw.points / 3);  // Estimate captain points
+            if (captainPoints > maxTripleCaptainPoints) {
+              maxTripleCaptainPoints = captainPoints;
+              maxTripleCaptainManager = manager.player_name;
+              maxTripleCaptainTeam = manager.entry_name;
+              maxTripleCaptainGW = chip.event;
+              // Note: In a real implementation, you'd get the actual captain's name from the API
+              maxTripleCaptainPlayer = "Player Name";  // This would come from the API
+            }
+          }
+
+          if (chip.name === 'bboost' && gw.points > maxBenchBoostPoints) {
+            maxBenchBoostPoints = gw.points;
+            maxBenchBoostManager = manager.player_name;
+            maxBenchBoostTeam = manager.entry_name;
+            maxBenchBoostGW = chip.event;
+          }
+        });
       });
 
       managerLeaguePositions.set(manager.entry, positions);
@@ -360,11 +447,24 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       }
     });
 
+    // Find manager with most total transfers
+    let maxTotalTransfers = 0;
+    let maxTotalTransfersManager = '';
+    let maxTotalTransfersTeam = '';
+
+    Object.values(totalTransfersByManager).forEach(({ transfers, manager, team }) => {
+      if (transfers > maxTotalTransfers) {
+        maxTotalTransfers = transfers;
+        maxTotalTransfersManager = manager;
+        maxTotalTransfersTeam = team;
+      }
+    });
+
     awards.push({
       icon: FaBolt,
       title: 'Highest Scoring Gameweek',
       description: `GW${maxGameweekNumber}`,
-      value: maxGameweekPoints,
+      value: `${maxGameweekPoints} (${maxGameweekRank.toLocaleString()})`,
       manager: `${maxGameweekManager} (${maxGameweekTeam})`,
       color: 'yellow.400',
     });
@@ -400,7 +500,7 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       icon: FaExchangeAlt,
       title: 'Transfer King',
       description: `GW${maxTransfersGameweek}`,
-      value: maxTransfers,
+      value: `${maxTransfers} transfers`,
       manager: `${maxTransfersManager} (${maxTransfersTeam})`,
       color: 'orange.400',
     });
@@ -409,7 +509,7 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       icon: FaPiggyBank,
       title: 'Richest Squad',
       description: `GW${maxTeamValueGameweek}`,
-      value: (maxTeamValue / 10).toFixed(1),
+      value: `$${(maxTeamValue / 10).toFixed(1)}`,
       manager: `${maxTeamValueManager} (${maxTeamValueTeam})`,
       color: 'green.500',
     });
@@ -418,7 +518,7 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       icon: FaChartLine,
       title: 'Biggest League Rank Improvement',
       description: `${getOrdinalSuffix(leagueRankStart)} (GW${leagueRankStartGW}) → ${getOrdinalSuffix(leagueRankEnd)} (GW${leagueRankEndGW})`,
-      value: biggestLeagueRankChange,
+      value: getOrdinalSuffix(biggestLeagueRankChange),
       manager: `${leagueRankChangeManager} (${leagueRankChangeTeam})`,
       color: 'pink.400',
     });
@@ -427,18 +527,36 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       icon: FaRocket,
       title: 'Best Gameweek Rank',
       description: `GW${bestGameweekRankGW}`,
-      value: bestGameweekRank.toLocaleString(),
+      value: `${bestGameweekRank.toLocaleString()} (${bestGameweekRankPoints} pts)`,
       manager: `${bestGameweekRankManager} (${bestGameweekRankTeam})`,
       color: 'red.400',
     });
 
     awards.push({
-      icon: FaBalanceScale,
-      title: 'Most Consistent Manager',
-      description: `Std Dev: ${lowestStdDev.toFixed(1)}`,
-      value: `Avg: ${consistentAvg.toFixed(1)}`,
-      manager: `${mostConsistentManager} (${mostConsistentTeam})`,
-      color: 'teal.400',
+      icon: FaExchangeAlt,
+      title: 'Most Total Transfers',
+      description: 'All Season',
+      value: maxTotalTransfers,
+      manager: `${maxTotalTransfersManager} (${maxTotalTransfersTeam})`,
+      color: 'blue.500',
+    });
+
+    awards.push({
+      icon: FaTrophy,
+      title: 'Best Triple Captain',
+      description: maxTripleCaptainGW ? `GW${maxTripleCaptainGW} (${maxTripleCaptainPlayer})` : 'Not Used',
+      value: maxTripleCaptainPoints ? `${maxTripleCaptainPoints * 3}` : 'N/A',
+      manager: maxTripleCaptainManager ? `${maxTripleCaptainManager} (${maxTripleCaptainTeam})` : 'No one yet',
+      color: 'yellow.500',
+    });
+
+    awards.push({
+      icon: FaCouch,
+      title: 'Best Bench Boost',
+      description: maxBenchBoostGW ? `GW${maxBenchBoostGW}` : 'Not Used',
+      value: maxBenchBoostPoints || 'N/A',
+      manager: maxBenchBoostManager ? `${maxBenchBoostManager} (${maxBenchBoostTeam})` : 'No one yet',
+      color: 'green.500',
     });
 
     return awards;
