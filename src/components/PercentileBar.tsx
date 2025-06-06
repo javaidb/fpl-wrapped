@@ -6,6 +6,17 @@ interface PercentileBarProps {
   managerHistories: Record<number, ManagerHistory>;
 }
 
+// Add helper function to format rank
+const formatRank = (rank: number): string => {
+  if (rank >= 1000000) {
+    return `${(rank / 1000000).toFixed(1)}M`;
+  }
+  if (rank >= 1000) {
+    return `${Math.round(rank / 1000)}K`;
+  }
+  return rank.toString();
+};
+
 const PercentileBar: React.FC<PercentileBarProps> = ({ leagueInfo, managerHistories }) => {
   // First, get all managers with their points and known ranks
   const managersData = leagueInfo.standings.results.map(manager => {
@@ -189,54 +200,89 @@ const PercentileBar: React.FC<PercentileBarProps> = ({ leagueInfo, managerHistor
   }, {} as Record<number, { range: typeof colorRanges[0], managers: any[], startIndex: number }>);
 
   return (
-    <VStack w="full" spacing={4} align="stretch">
-      {/* Bars */}
-      <HStack w="full" spacing={1} align="stretch" h="50px">
-        {sortedManagers.map((manager, index) => {
-          const percentile = getPercentile(manager.globalRank);
-          const { color, label, isHighlighted } = getColorAndLabel(percentile);
-          const displayRank = index + 1;
-          
-          return (
-            <Tooltip
-              key={manager.entry_name}
-              label={`${displayRank}. ${manager.entry_name}
+    <VStack w="full" spacing={4} align="stretch" pt={8}>
+      <Box position="relative">
+        {/* Rank and Percentile Labels */}
+        <HStack 
+          w="full" 
+          spacing={1} 
+          position="absolute" 
+          top="-40px"
+          left={0} 
+          right={0}
+        >
+          {sortedManagers.map((manager, index) => {
+            const percentile = getPercentile(manager.globalRank);
+            const { isHighlighted } = getColorAndLabel(percentile);
+            
+            return (
+              <Box
+                key={`label-${manager.entry}`}
+                flex={1}
+                textAlign="center"
+              >
+                <VStack 
+                  spacing={0}
+                  opacity={isHighlighted ? 0.8 : 0.5}
+                  fontSize="2xs"
+                  color="whiteAlpha.700"
+                >
+                  <Text>{formatRank(manager.globalRank)}</Text>
+                  <Text>{`${percentile.toFixed(1)}%`}</Text>
+                </VStack>
+              </Box>
+            );
+          })}
+        </HStack>
+
+        {/* Blocks */}
+        <HStack w="full" spacing={1} align="stretch" h="50px">
+          {sortedManagers.map((manager, index) => {
+            const percentile = getPercentile(manager.globalRank);
+            const { color, label, isHighlighted } = getColorAndLabel(percentile);
+            const displayRank = index + 1;
+            
+            return (
+              <Tooltip
+                key={manager.entry_name}
+                label={`${displayRank}. ${manager.entry_name}
 Points: ${manager.total}
 Global Rank: ${manager.globalRank.toLocaleString()}
 Percentile: ${percentile.toFixed(2)}%`}
-              hasArrow
-            >
-              <Box
-                flex={1}
-                bg={color}
-                borderRadius="md"
-                transition="all 0.2s"
-                position="relative"
-                opacity={isHighlighted ? 1 : 0.5}
-                _hover={{
-                  transform: isHighlighted ? 'scaleY(1.1)' : 'none',
-                  filter: isHighlighted ? 'brightness(1.2)' : 'brightness(1.1)',
-                  zIndex: 1
-                }}
-                cursor="pointer"
+                hasArrow
               >
-                <Text
-                  position="absolute"
-                  top="50%"
-                  left="50%"
-                  transform="translate(-50%, -50%)"
-                  color={isHighlighted ? "white" : "whiteAlpha.800"}
-                  fontSize="sm"
-                  fontWeight={isHighlighted ? "bold" : "medium"}
-                  textShadow={isHighlighted ? "1px 1px 2px rgba(0,0,0,0.5)" : "none"}
+                <Box
+                  flex={1}
+                  bg={color}
+                  borderRadius="md"
+                  transition="all 0.2s"
+                  position="relative"
+                  opacity={isHighlighted ? 1 : 0.5}
+                  _hover={{
+                    transform: isHighlighted ? 'scaleY(1.1)' : 'none',
+                    filter: isHighlighted ? 'brightness(1.2)' : 'brightness(1.1)',
+                    zIndex: 1
+                  }}
+                  cursor="pointer"
                 >
-                  {displayRank}
-                </Text>
-              </Box>
-            </Tooltip>
-          );
-        })}
-      </HStack>
+                  <Text
+                    position="absolute"
+                    top="50%"
+                    left="50%"
+                    transform="translate(-50%, -50%)"
+                    color={isHighlighted ? "white" : "whiteAlpha.800"}
+                    fontSize="sm"
+                    fontWeight={isHighlighted ? "bold" : "medium"}
+                    textShadow={isHighlighted ? "1px 1px 2px rgba(0,0,0,0.5)" : "none"}
+                  >
+                    {displayRank}
+                  </Text>
+                </Box>
+              </Tooltip>
+            );
+          })}
+        </HStack>
+      </Box>
 
       {/* Percentile Group Markers - only show for top 30% and above */}
       <Box position="relative" h="24px" mt={2}>
