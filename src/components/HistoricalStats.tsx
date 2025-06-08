@@ -1,5 +1,5 @@
 import { Box, VStack, Heading, Text, HStack, Divider, Icon } from '@chakra-ui/react';
-import { FaTrophy, FaMedal } from 'react-icons/fa';
+import { FaTrophy, FaMedal, FaCircle } from 'react-icons/fa';
 import { LeagueInfo, ManagerHistory } from '../services/fplApi';
 
 interface HistoricalStatsProps {
@@ -36,7 +36,7 @@ const HistoricalStats: React.FC<HistoricalStatsProps> = ({ leagueInfo, managerHi
         seasonTeams.push({
           position: 0, // Will be calculated after sorting
           managerName: manager.player_name,
-          teamName: manager.entry_name, // Use current team name since past seasons don't store team names
+          teamName: manager.entry_name,
           points: seasonHistory.total_points,
           season: season
         });
@@ -58,7 +58,6 @@ const HistoricalStats: React.FC<HistoricalStatsProps> = ({ leagueInfo, managerHi
       <VStack spacing={8} align="stretch">
         <Heading 
           size="xl" 
-          color="white" 
           textAlign="center"
           bgGradient="linear(to-r, yellow.400, purple.400)"
           bgClip="text"
@@ -69,72 +68,182 @@ const HistoricalStats: React.FC<HistoricalStatsProps> = ({ leagueInfo, managerHi
         
         <Divider borderColor="whiteAlpha.200" />
         
-        {seasons.map((season, index) => {
-          const seasonTeams = getSeasonTopTeams(season);
+        <Box position="relative" minH="600px">
+          {/* Central timeline line */}
+          <Box
+            position="absolute"
+            left="50%"
+            top="0"
+            bottom="0"
+            width="2px"
+            bg="whiteAlpha.200"
+            transform="translateX(-50%)"
+            zIndex={0}
+          />
           
-          if (seasonTeams.length === 0) return null;
-          
-          return (
-            <VStack key={season} spacing={4} align="stretch">
-              <Text 
-                color="purple.400" 
-                fontSize="xl" 
-                fontWeight="bold"
-                textAlign="center"
+          {seasons.map((season, index) => {
+            const seasonTeams = getSeasonTopTeams(season);
+            const isRight = index % 2 !== 0; // Start from left side
+            
+            if (seasonTeams.length === 0) return null;
+            
+            return (
+              <Box 
+                key={season} 
+                position="relative" 
+                mb={12}
+                pl={isRight ? "50%" : "0"}
+                pr={isRight ? "0" : "50%"}
               >
-                Season {season}
-              </Text>
-              
-              {seasonTeams.map((team, idx) => (
-                <Box 
-                  key={`${season}-${idx}`}
-                  p={4}
-                  borderRadius="lg"
-                  border="1px solid"
-                  borderColor={idx === 0 ? "yellow.400" : "gray.400"}
-                  _hover={{ 
-                    transform: 'translateY(-2px)',
-                    boxShadow: 'lg'
-                  }}
-                  transition="all 0.2s"
-                  bg="whiteAlpha.50"
+                {/* Timeline dot */}
+                <Box
+                  position="absolute"
+                  left="50%"
+                  top="24px"
+                  transform="translate(-50%, 0)"
+                  zIndex={1}
                 >
-                  <HStack spacing={4}>
-                    <Icon 
-                      as={idx === 0 ? FaTrophy : FaMedal}
-                      color={idx === 0 ? "yellow.400" : "gray.400"}
-                      boxSize={6}
-                    />
-                    <VStack align="start" spacing={1}>
-                      <HStack>
-                        <Text 
-                          color="white" 
-                          fontWeight="bold"
-                          fontSize="lg"
-                        >
-                          {team.teamName}
-                        </Text>
-                        <Text 
-                          color="whiteAlpha.700"
-                          fontSize="sm"
-                        >
-                          ({team.managerName})
-                        </Text>
-                      </HStack>
-                      <Text color="whiteAlpha.900">
-                        {team.points.toLocaleString()} points
-                      </Text>
-                    </VStack>
-                  </HStack>
+                  <Icon 
+                    as={FaCircle} 
+                    color="purple.400" 
+                    boxSize={4}
+                  />
                 </Box>
-              ))}
-              
-              {index < seasons.length - 1 && seasonTeams.length > 0 && (
-                <Divider borderColor="whiteAlpha.100" />
-              )}
-            </VStack>
-          );
-        })}
+                
+                {/* Season content */}
+                <Box 
+                  pl={isRight ? 8 : 0} 
+                  pr={isRight ? 0 : 8}
+                  position="relative"
+                >
+                  {/* Season connector line */}
+                  <Box
+                    position="absolute"
+                    top="34px"
+                    left={isRight ? "-30px" : "auto"}
+                    right={isRight ? "auto" : "-30px"}
+                    width="30px"
+                    height="2px"
+                    bg="whiteAlpha.200"
+                  />
+                  
+                  <Box 
+                    borderRadius="xl"
+                    border="1px solid"
+                    borderColor="whiteAlpha.200"
+                    bg="whiteAlpha.50"
+                    p={6}
+                    _hover={{ 
+                      transform: isRight ? 'translateX(8px)' : 'translateX(-8px)',
+                      boxShadow: 'lg'
+                    }}
+                    transition="all 0.2s"
+                  >
+                    <VStack 
+                      spacing={4} 
+                      align={isRight ? "start" : "end"}
+                    >
+                      <Text 
+                        color="purple.400" 
+                        fontSize="xl" 
+                        fontWeight="bold"
+                        textAlign={isRight ? "left" : "right"}
+                        w="full"
+                        pb={2}
+                        borderBottom="1px solid"
+                        borderColor="whiteAlpha.200"
+                      >
+                        Season {season}
+                      </Text>
+                      
+                      {seasonTeams.map((team, idx) => (
+                        <HStack 
+                          key={`${season}-${idx}`}
+                          spacing={4} 
+                          justify={isRight ? "start" : "end"}
+                          w="full"
+                          p={3}
+                          borderRadius="lg"
+                          bg={idx === 0 ? "whiteAlpha.100" : "transparent"}
+                        >
+                          {!isRight && (
+                            <VStack align="end" spacing={1} flex={1}>
+                              <HStack spacing={2}>
+                                <Text 
+                                  color="whiteAlpha.700"
+                                  fontSize="xs"
+                                >
+                                  {idx === 0 ? "CHAMPION" : "RUNNER-UP"}
+                                </Text>
+                                <Text 
+                                  color="white" 
+                                  fontWeight="bold"
+                                  fontSize="lg"
+                                >
+                                  {team.teamName}
+                                </Text>
+                              </HStack>
+                              <Text 
+                                color="whiteAlpha.700"
+                                fontSize="sm"
+                              >
+                                {team.managerName}
+                              </Text>
+                              <Text 
+                                color="whiteAlpha.900"
+                                fontSize="sm"
+                                fontWeight="medium"
+                              >
+                                {team.points.toLocaleString()} points
+                              </Text>
+                            </VStack>
+                          )}
+                          <Icon 
+                            as={idx === 0 ? FaTrophy : FaMedal}
+                            color={idx === 0 ? "yellow.400" : "gray.400"}
+                            boxSize={6}
+                          />
+                          {isRight && (
+                            <VStack align="start" spacing={1} flex={1}>
+                              <HStack spacing={2}>
+                                <Text 
+                                  color="white" 
+                                  fontWeight="bold"
+                                  fontSize="lg"
+                                >
+                                  {team.teamName}
+                                </Text>
+                                <Text 
+                                  color="whiteAlpha.700"
+                                  fontSize="xs"
+                                >
+                                  {idx === 0 ? "CHAMPION" : "RUNNER-UP"}
+                                </Text>
+                              </HStack>
+                              <Text 
+                                color="whiteAlpha.700"
+                                fontSize="sm"
+                              >
+                                {team.managerName}
+                              </Text>
+                              <Text 
+                                color="whiteAlpha.900"
+                                fontSize="sm"
+                                fontWeight="medium"
+                              >
+                                {team.points.toLocaleString()} points
+                              </Text>
+                            </VStack>
+                          )}
+                        </HStack>
+                      ))}
+                    </VStack>
+                  </Box>
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
       </VStack>
     </Box>
   );
