@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { LeagueInfo, ManagerHistory } from '../services/fplApi';
 import { FaTrophy, FaArrowUp, FaCouch, FaBolt, FaMedal, FaExchangeAlt, FaPiggyBank, FaRocket, FaChartLine, FaBalanceScale } from 'react-icons/fa';
 import HistoricalStats from './HistoricalStats';
+import ChipsTable from './ChipsTable';
 
 interface LeagueStatsProps {
   leagueInfo: LeagueInfo;
@@ -685,11 +686,11 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
                     position: 'bottom', 
                     offset: 0, 
                     fill: 'white',
-                    fontSize: 12,
+                    fontSize: 16,
                     fontWeight: 'bold'
                   }}
                   stroke="white"
-                  tick={{ fill: 'white', fontSize: 11 }}
+                  tick={{ fill: 'white', fontSize: 14 }}
                 />
                 <YAxis 
                   label={{ 
@@ -697,13 +698,13 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
                     angle: -90, 
                     position: 'insideLeft', 
                     fill: 'white',
-                    fontSize: 12,
+                    fontSize: 16,
                     fontWeight: 'bold'
                   }}
                   domain={[minPoints - pointsBuffer, maxPoints + pointsBuffer]}
                   tickCount={10}
                   stroke="white"
-                  tick={{ fill: 'white', fontSize: 11 }}
+                  tick={{ fill: 'white', fontSize: 14 }}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -729,7 +730,7 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
                   formatter={(value, entry) => (
                     <Text 
                       color={managerColors[value]}
-                      fontSize="sm"
+                      fontSize="md"
                       fontWeight="medium"
                       px={2}
                       transition="all 0.2s"
@@ -788,11 +789,11 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
                     position: 'bottom', 
                     offset: 0, 
                     fill: 'white',
-                    fontSize: 12,
+                    fontSize: 16,
                     fontWeight: 'bold'
                   }}
                   stroke="white"
-                  tick={{ fill: 'white', fontSize: 11 }}
+                  tick={{ fill: 'white', fontSize: 14 }}
                 />
                 <YAxis 
                   reversed 
@@ -801,13 +802,13 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
                     angle: -90, 
                     position: 'insideLeft', 
                     fill: 'white',
-                    fontSize: 12,
+                    fontSize: 16,
                     fontWeight: 'bold'
                   }}
                   domain={[1, leagueInfo.standings.results.length]}
                   ticks={Array.from({ length: leagueInfo.standings.results.length }, (_, i) => i + 1)}
                   stroke="white"
-                  tick={{ fill: 'white', fontSize: 11 }}
+                  tick={{ fill: 'white', fontSize: 14 }}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -833,7 +834,7 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
                   formatter={(value, entry) => (
                     <Text 
                       color={managerColors[value]}
-                      fontSize="sm"
+                      fontSize="md"
                       fontWeight="medium"
                       px={2}
                       transition="all 0.2s"
@@ -869,13 +870,21 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
         </Box>
       </Box>
 
-      {/* Historical Stats Section */}
-      <Box w="full" className="pdf-page historical-page" bg={BACKGROUND_COLOR}>
-        <HistoricalStats 
+      {/* Chips Strategy Section */}
+      <Box w="full" className="pdf-page chips-page" bg={BACKGROUND_COLOR}>
+        <ChipsTable 
           leagueInfo={leagueInfo}
           managerHistories={managerHistories}
         />
       </Box>
+
+      {/* Historical Stats Section - Temporarily disabled */}
+      {/* <Box w="full" className="pdf-page historical-page" bg={BACKGROUND_COLOR}>
+        <HistoricalStats 
+          leagueInfo={leagueInfo}
+          managerHistories={managerHistories}
+        />
+      </Box> */}
     </VStack>
   );
 };
