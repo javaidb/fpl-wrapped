@@ -24,7 +24,7 @@ import ReactDOM from 'react-dom';
 const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
 
 // Define the custom theme
-const theme = extendTheme({
+export const theme = extendTheme({
   config: {
     initialColorMode: 'dark',
     useSystemColorMode: false,
