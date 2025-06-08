@@ -585,6 +585,69 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
     return awards;
   };
 
+  const getPointsDataForRange = (startGw: number, endGw: number) => {
+    const data: any[] = [];
+    const managers = leagueInfo.standings.results;
+
+    // Process selected gameweeks
+    for (let gw = startGw; gw <= endGw; gw++) {
+      const gameweekData: any = { gameweek: gw };
+      
+      managers.forEach(manager => {
+        const history = managerHistories[manager.entry];
+        if (history && history.current[gw - 1]) {
+          gameweekData[manager.entry_name] = history.current[gw - 1].total_points;
+        }
+      });
+
+      data.push(gameweekData);
+    }
+
+    return data;
+  };
+
+  const getNiceScale = (min: number, max: number, tickCount: number = 8) => {
+    const range = max - min;
+    const roughStep = range / (tickCount - 1);
+    
+    // Calculate a nice step value
+    const step = Math.pow(10, Math.floor(Math.log10(roughStep)));
+    const niceStep = 
+      roughStep / step < 1.5 ? step / 2 :
+      roughStep / step < 3 ? step :
+      roughStep / step < 7 ? step * 2 :
+      step * 5;
+
+    // Calculate nice min and max values
+    const niceMin = Math.floor(min / niceStep) * niceStep;
+    const niceMax = Math.ceil(max / niceStep) * niceStep;
+
+    return {
+      min: niceMin,
+      max: niceMax,
+      step: niceStep
+    };
+  };
+
+  const getPointsRangeForData = (data: any[]) => {
+    const allPoints = data.flatMap(gw => 
+      Object.entries(gw)
+        .filter(([key]) => key !== 'gameweek')
+        .map(([, value]) => value as number)
+    );
+    const minPoints = Math.min(...allPoints);
+    const maxPoints = Math.max(...allPoints);
+    const { min, max, step } = getNiceScale(minPoints, maxPoints);
+    return { 
+      minPoints: min, 
+      maxPoints: max,
+      ticks: Array.from(
+        { length: Math.floor((max - min) / step) + 1 },
+        (_, i) => min + (i * step)
+      )
+    };
+  };
+
   return (
     <VStack spacing={12} w="full" bg={BACKGROUND_COLOR}>
       {/* Awards Section */}
@@ -685,106 +748,143 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
         </SimpleGrid>
       </Box>
 
-      {/* Points Over Time Graph */}
+      {/* Points Over Time Graphs */}
       <Box w="full" className="pdf-page points-page" bg={BACKGROUND_COLOR}>
-        <Box bg={BACKGROUND_COLOR} p={6} borderRadius="xl" boxShadow="dark-lg" w="full" h={`${graphHeight}px`}>
+        <Box bg={BACKGROUND_COLOR} p={6} borderRadius="xl" boxShadow="dark-lg" w="full">
           <Heading size="md" mb={4} color="white">Points Over Time</Heading>
-          <Box h="90%" bg={BACKGROUND_COLOR}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart 
-                data={getPointsData()}
-                style={{ backgroundColor: BACKGROUND_COLOR }}
-                margin={{ top: 20, right: 30, left: 20, bottom: 65 }}
-              >
-                <CartesianGrid 
-                  strokeDasharray="3 3" 
-                  stroke="rgba(255,255,255,0.1)"
-                  strokeWidth={0.5}
-                />
-                <XAxis 
-                  dataKey="gameweek" 
-                  label={{ 
-                    value: 'Gameweek', 
-                    position: 'bottom', 
-                    offset: 0, 
-                    fill: 'white',
-                    fontSize: 16,
-                    fontWeight: 'bold'
-                  }}
-                  stroke="white"
-                  tick={{ fill: 'white', fontSize: 14 }}
-                />
-                <YAxis 
-                  label={{ 
-                    value: 'Total Points', 
-                    angle: -90, 
-                    position: 'insideLeft', 
-                    fill: 'white',
-                    fontSize: 16,
-                    fontWeight: 'bold'
-                  }}
-                  domain={[minPoints - pointsBuffer, maxPoints + pointsBuffer]}
-                  tickCount={10}
-                  stroke="white"
-                  tick={{ fill: 'white', fontSize: 14 }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: BACKGROUND_COLOR, 
-                    border: '1px solid rgba(255,255,255,0.2)', 
-                    color: 'white',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    padding: '8px 12px'
-                  }}
-                  labelStyle={{ color: 'white', fontWeight: 'bold', marginBottom: '4px' }}
-                  itemStyle={{ padding: '2px 0' }}
-                  cursor={{ strokeWidth: 1 }}
-                />
-                <Legend 
-                  wrapperStyle={{ 
-                    color: 'white',
-                    paddingTop: '20px',
-                  }}
-                  layout="horizontal"
-                  align="center"
-                  verticalAlign="bottom"
-                  formatter={(value, entry) => (
-                    <Text 
-                      color={managerColors[value]}
-                      fontSize="md"
-                      fontWeight="medium"
-                      px={2}
-                      transition="all 0.2s"
-                      _hover={{
-                        filter: 'brightness(1.2)',
-                      }}
-                    >
-                      {value}
-                    </Text>
-                  )}
-                  iconSize={10}
-                  iconType="plainline"
-                />
-                {leagueInfo.standings.results.map((manager, index) => (
-                  <Line
-                    key={manager.entry}
-                    type="monotone"
-                    dataKey={manager.entry_name}
-                    stroke={managerColors[manager.entry_name]}
-                    dot={false}
-                    strokeWidth={2}
-                    activeDot={{ 
-                      r: 6, 
-                      strokeWidth: 0,
-                      fill: managerColors[manager.entry_name],
-                      filter: 'brightness(1.2)'
+          <VStack spacing={8}>
+            <SimpleGrid columns={2} spacing={4} w="full">
+              {[
+                { start: 1, end: 10, title: "Gameweeks 1-10" },
+                { start: 11, end: 20, title: "Gameweeks 11-20" },
+                { start: 21, end: 30, title: "Gameweeks 21-30" },
+                { start: 31, end: 38, title: "Gameweeks 31-38" }
+              ].map((range, index) => {
+                const rangeData = getPointsDataForRange(range.start, range.end);
+                const { minPoints, maxPoints, ticks } = getPointsRangeForData(rangeData);
+                
+                return (
+                  <Box key={index} h={`${graphHeight/2}px`} bg={BACKGROUND_COLOR}>
+                    <Text color="white" fontSize="sm" fontWeight="bold" mb={2}>{range.title}</Text>
+                    <Box h="90%">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart 
+                          data={rangeData}
+                          style={{ backgroundColor: BACKGROUND_COLOR }}
+                          margin={{ top: 20, right: 30, left: 20, bottom: index >= 2 ? 65 : 30 }}
+                        >
+                          <CartesianGrid 
+                            strokeDasharray="3 3" 
+                            stroke="rgba(255,255,255,0.1)"
+                            strokeWidth={0.5}
+                          />
+                          <XAxis 
+                            dataKey="gameweek" 
+                            stroke="white"
+                            tick={{ fill: 'white', fontSize: 12 }}
+                            label={index >= 2 ? { 
+                              value: 'Gameweek', 
+                              position: 'bottom', 
+                              offset: 0, 
+                              fill: 'white',
+                              fontSize: 14,
+                              fontWeight: 'bold'
+                            } : undefined}
+                          />
+                          <YAxis 
+                            label={{ 
+                              value: index % 2 === 0 ? 'Total Points' : '', 
+                              angle: -90, 
+                              position: 'insideLeft', 
+                              fill: 'white',
+                              fontSize: 14,
+                              fontWeight: 'bold'
+                            }}
+                            domain={[minPoints, maxPoints]}
+                            ticks={ticks}
+                            stroke="white"
+                            tick={{ fill: 'white', fontSize: 12 }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: BACKGROUND_COLOR, 
+                              border: '1px solid rgba(255,255,255,0.2)', 
+                              color: 'white',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                              padding: '8px 12px'
+                            }}
+                            labelStyle={{ color: 'white', fontWeight: 'bold', marginBottom: '4px' }}
+                            itemStyle={{ padding: '2px 0' }}
+                            cursor={{ strokeWidth: 1 }}
+                          />
+                          {leagueInfo.standings.results.map((manager) => (
+                            <Line
+                              key={manager.entry}
+                              type="monotone"
+                              dataKey={manager.entry_name}
+                              stroke={managerColors[manager.entry_name]}
+                              dot={false}
+                              strokeWidth={2}
+                              activeDot={{ 
+                                r: 4, 
+                                strokeWidth: 0,
+                                fill: managerColors[manager.entry_name],
+                                filter: 'brightness(1.2)'
+                              }}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </Box>
+                );
+              })}
+            </SimpleGrid>
+            
+            {/* Shared Legend */}
+            <Box w="full" bg={BACKGROUND_COLOR} p={4} borderRadius="md">
+              <ResponsiveContainer width="100%" height={50}>
+                <LineChart 
+                  margin={{ top: 0, right: 30, left: 20, bottom: 0 }}
+                  data={[{ name: 'dummy' }]}
+                >
+                  <Legend 
+                    wrapperStyle={{ 
+                      color: 'white',
+                      paddingTop: '10px',
                     }}
+                    layout="horizontal"
+                    align="center"
+                    verticalAlign="middle"
+                    formatter={value => (
+                      <span style={{ 
+                        color: managerColors[value],
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        padding: '0 8px',
+                        transition: 'all 0.2s'
+                      }}>
+                        {value}
+                      </span>
+                    )}
+                    iconSize={8}
+                    iconType="plainline"
                   />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </Box>
+                  {leagueInfo.standings.results.map((manager) => (
+                    <Line
+                      key={manager.entry}
+                      type="monotone"
+                      dataKey={manager.entry_name}
+                      stroke={managerColors[manager.entry_name]}
+                      dot={false}
+                      strokeWidth={2}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </VStack>
         </Box>
       </Box>
 
