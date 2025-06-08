@@ -19,7 +19,7 @@ import Footer from './components/Footer';
 import { fetchLeagueInfo, fetchManagerHistory } from './services/fplApi';
 import type { LeagueInfo, ManagerHistory } from './services/fplApi';
 import CoverPage from './components/CoverPage';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
 const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
 
@@ -146,7 +146,8 @@ function App() {
         
         // Create a new Footer component instance for PDF
         const pdfFooter = document.createElement('div');
-        ReactDOM.render(<Footer isPdf={true} />, pdfFooter);
+        const pdfFooterRoot = createRoot(pdfFooter);
+        pdfFooterRoot.render(<Footer isPdf={true} />);
         wrapper.appendChild(pdfFooter);
 
         const footerCanvas = await html2canvas(pdfFooter, {
