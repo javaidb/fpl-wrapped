@@ -250,8 +250,8 @@ function App() {
   return (
     <ChakraProvider theme={theme}>
       <Box minH="100vh" bg={BACKGROUND_COLOR} position="relative" pb="16">
-        <Container maxW="container.xl" pt={8} bg={BACKGROUND_COLOR}>
-          <VStack spacing={8} align="stretch" bg={BACKGROUND_COLOR}>
+        <Box w="100%" pt={8} bg={BACKGROUND_COLOR}>
+          <VStack spacing={8} align="stretch" bg={BACKGROUND_COLOR} px={4}>
             <LeagueForm onSubmit={handleSubmit} />
             
             {isLoading && (
@@ -284,7 +284,7 @@ function App() {
               )}
             </div>
           </VStack>
-        </Container>
+        </Box>
         <Footer isPdf={false} />
       </Box>
     </ChakraProvider>

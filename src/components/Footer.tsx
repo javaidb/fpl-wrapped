@@ -22,8 +22,9 @@ const Footer: React.FC<FooterProps> = ({ isPdf = false }) => {
       py={py}
       position="relative"
       mt={8}
+      w="100%"
     >
-      <Container maxW="container.xl" bg={BACKGROUND_COLOR}>
+      <Box w="100%" bg={BACKGROUND_COLOR}>
         <Stack
           direction={{ base: 'column', md: 'row' }}
           spacing={4}
@@ -56,7 +57,7 @@ const Footer: React.FC<FooterProps> = ({ isPdf = false }) => {
             Built with React & Chakra UI
           </Text>
         </Stack>
-      </Container>
+      </Box>
     </Box>
   );
 };
