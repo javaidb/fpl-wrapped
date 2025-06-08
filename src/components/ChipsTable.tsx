@@ -15,6 +15,7 @@ interface ChipData {
   name: string;
   points: number;
   displayPoints: number;
+  customLabel?: string;
 }
 
 const BACKGROUND_COLOR = 'rgb(38, 38, 38)';
@@ -74,6 +75,12 @@ const getColorShade = (points: number, chipName: string, quartiles: Record<strin
   return `${baseColor}.800`; // Below Q1 - darkest
 };
 
+// Function to determine if it's the first or second wildcard
+const getWildcardLabel = (gameweek: number) => {
+  // First wildcard can only be used in first half of season (GW1-19)
+  return gameweek <= 19 ? 'WC1' : 'WC2';
+};
+
 const ChipsTable: React.FC<ChipsTableProps> = ({ leagueInfo, managerHistories }) => {
   // Get all gameweeks (assuming 38 GWs in a season)
   const gameweeks = Array.from({ length: 38 }, (_, i) => i + 1);
@@ -118,7 +125,9 @@ const ChipsTable: React.FC<ChipsTableProps> = ({ leagueInfo, managerHistories })
         chipData[chip.event] = {
           name: chip.name,
           points: points,
-          displayPoints: gwHistory.points
+          displayPoints: gwHistory.points,
+          // Add custom label for wildcards
+          customLabel: chip.name === 'wildcard' ? getWildcardLabel(chip.event) : undefined
         };
       }
     });
@@ -220,7 +229,7 @@ const ChipsTable: React.FC<ChipsTableProps> = ({ leagueInfo, managerHistories })
                               fontWeight="bold"
                               lineHeight="shorter"
                             >
-                              {chipStyle.label}
+                              {chipData.customLabel || chipStyle.label}
                             </Text>
                             {chipData.name !== 'wildcard' && (
                               <Text
