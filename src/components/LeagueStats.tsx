@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { useState, useEffect } from 'react';
 import { LeagueInfo, ManagerHistory } from '../services/fplApi';
-import { FaTrophy, FaArrowUp, FaCouch, FaBolt, FaMedal, FaExchangeAlt, FaPiggyBank, FaRocket, FaChartLine, FaBalanceScale } from 'react-icons/fa';
+import { FaTrophy, FaArrowUp, FaCouch, FaBolt, FaMedal, FaExchangeAlt, FaPiggyBank, FaRocket, FaChartLine, FaBalanceScale, FaHistory, FaSyncAlt, FaCrown, FaChair } from 'react-icons/fa';
 import HistoricalStats from './HistoricalStats';
 import ChipsTable from './ChipsTable';
 
@@ -63,6 +63,7 @@ const CHART_BG_COLOR = BACKGROUND_COLOR; // Use the same color for consistency
 
 const AWARDS_BG_COLOR = "rgb(0, 255, 133)";
 const AWARDS_TEXT_COLOR = "rgb(56, 0, 60)";
+const TOTAL_FPL_PLAYERS = 10000000; // Typical number of FPL players
 
 const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories }) => {
   // Find the latest gameweek with data
@@ -191,6 +192,11 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
     let maxBenchBoostManager = '';
     let maxBenchBoostTeam = '';
     let maxBenchBoostGW = 0;
+
+    let maxFreeHitPoints = 0;
+    let maxFreeHitManager = '';
+    let maxFreeHitTeam = '';
+    let maxFreeHitGW = 0;
 
     let totalTransfersByManager: { [key: string]: { 
       transfers: number, 
@@ -377,6 +383,13 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
             maxBenchBoostTeam = manager.entry_name;
             maxBenchBoostGW = chip.event;
           }
+
+          if (chip.name === 'freehit' && gw.points > maxFreeHitPoints) {
+            maxFreeHitPoints = gw.points;
+            maxFreeHitManager = manager.player_name;
+            maxFreeHitTeam = manager.entry_name;
+            maxFreeHitGW = chip.event;
+          }
         });
       });
 
@@ -462,10 +475,28 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
     });
 
     awards.push({
+      icon: FaMedal,
+      title: 'Best Overall Rank',
+      description: `GW${bestOverallRankGameweek}`,
+      value: `Top ${((bestOverallRank / TOTAL_FPL_PLAYERS) * 100).toFixed(3)}% (${bestOverallRank.toLocaleString()})`,
+      manager: `${bestOverallRankManager} (${bestOverallRankTeam})`,
+      color: 'blue.400',
+    });
+
+    awards.push({
+      icon: FaRocket,
+      title: 'Best Gameweek Rank',
+      description: `GW${bestGameweekRankGW}`,
+      value: `Top ${((bestGameweekRank / TOTAL_FPL_PLAYERS) * 100).toFixed(3)}% (${bestGameweekRankPoints} pts)`,
+      manager: `${bestGameweekRankManager} (${bestGameweekRankTeam})`,
+      color: 'red.400',
+    });
+
+    awards.push({
       icon: FaBolt,
       title: 'Highest Scoring Gameweek',
       description: `GW${maxGameweekNumber}`,
-      value: `${maxGameweekPoints} (${maxGameweekRank.toLocaleString()})`,
+      value: `${maxGameweekPoints} pts (Top ${((maxGameweekRank / TOTAL_FPL_PLAYERS) * 100).toFixed(3)}%)`,
       manager: `${maxGameweekManager} (${maxGameweekTeam})`,
       color: 'yellow.400',
     });
@@ -474,7 +505,7 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       icon: FaCouch,
       title: 'Bench Hero',
       description: `GW${maxBenchGameweek}`,
-      value: maxBenchPoints,
+      value: `${maxBenchPoints} pts`,
       manager: `${maxBenchManager} (${maxBenchTeam})`,
       color: 'purple.400',
     });
@@ -482,19 +513,10 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
     awards.push({
       icon: FaArrowUp,
       title: 'Biggest Overall Rank Climber',
-      description: `${startRank.toLocaleString()} → ${endRank.toLocaleString()}`,
-      value: biggestRankImprovement.toLocaleString(),
+      description: `${getOrdinalSuffix(startRank)} (GW1) → ${getOrdinalSuffix(endRank)} (GW${managerHistories[leagueInfo.standings.results.find(m => m.player_name === rankImprovementManager)?.entry || 0]?.current.length})`,
+      value: `${biggestRankImprovement.toLocaleString()} places`,
       manager: `${rankImprovementManager} (${rankImprovementTeam})`,
       color: 'green.400',
-    });
-
-    awards.push({
-      icon: FaMedal,
-      title: 'Best Overall Rank',
-      description: `GW${bestOverallRankGameweek}`,
-      value: bestOverallRank.toLocaleString(),
-      manager: `${bestOverallRankManager} (${bestOverallRankTeam})`,
-      color: 'blue.400',
     });
 
     awards.push({
@@ -519,45 +541,45 @@ const LeagueStats: React.FC<LeagueStatsProps> = ({ leagueInfo, managerHistories 
       icon: FaChartLine,
       title: 'Biggest League Rank Improvement',
       description: `${getOrdinalSuffix(leagueRankStart)} (GW${leagueRankStartGW}) → ${getOrdinalSuffix(leagueRankEnd)} (GW${leagueRankEndGW})`,
-      value: getOrdinalSuffix(biggestLeagueRankChange),
+      value: `${biggestLeagueRankChange} places`,
       manager: `${leagueRankChangeManager} (${leagueRankChangeTeam})`,
       color: 'pink.400',
     });
 
     awards.push({
-      icon: FaRocket,
-      title: 'Best Gameweek Rank',
-      description: `GW${bestGameweekRankGW}`,
-      value: `${bestGameweekRank.toLocaleString()} (${bestGameweekRankPoints} pts)`,
-      manager: `${bestGameweekRankManager} (${bestGameweekRankTeam})`,
-      color: 'red.400',
-    });
-
-    awards.push({
-      icon: FaExchangeAlt,
+      icon: FaHistory,
       title: 'Most Total Transfers',
       description: 'All Season',
-      value: maxTotalTransfers,
+      value: `${maxTotalTransfers} transfers`,
       manager: `${maxTotalTransfersManager} (${maxTotalTransfersTeam})`,
       color: 'blue.500',
     });
 
     awards.push({
-      icon: FaTrophy,
+      icon: FaCrown,
       title: 'Best Triple Captain',
       description: maxTripleCaptainGW ? `GW${maxTripleCaptainGW} (${maxTripleCaptainPlayer})` : 'Not Used',
-      value: maxTripleCaptainPoints ? `${maxTripleCaptainPoints * 3}` : 'N/A',
+      value: maxTripleCaptainPoints ? `${maxTripleCaptainPoints * 3} pts` : 'N/A',
       manager: maxTripleCaptainManager ? `${maxTripleCaptainManager} (${maxTripleCaptainTeam})` : 'No one yet',
       color: 'yellow.500',
     });
 
     awards.push({
-      icon: FaCouch,
+      icon: FaChair,
       title: 'Best Bench Boost',
       description: maxBenchBoostGW ? `GW${maxBenchBoostGW}` : 'Not Used',
-      value: maxBenchBoostPoints || 'N/A',
+      value: maxBenchBoostPoints ? `${maxBenchBoostPoints} pts` : 'N/A',
       manager: maxBenchBoostManager ? `${maxBenchBoostManager} (${maxBenchBoostTeam})` : 'No one yet',
       color: 'green.500',
+    });
+
+    awards.push({
+      icon: FaSyncAlt,
+      title: 'Best Free Hit',
+      description: maxFreeHitGW ? `GW${maxFreeHitGW}` : 'Not Used',
+      value: maxFreeHitPoints ? `${maxFreeHitPoints} pts` : 'N/A',
+      manager: maxFreeHitManager ? `${maxFreeHitManager} (${maxFreeHitTeam})` : 'No one yet',
+      color: 'purple.500',
     });
 
     return awards;
