@@ -221,19 +221,61 @@ function App() {
     setIsLoading(true);
     try {
       const league = await fetchLeagueInfo(leagueId);
-      setLeagueInfo(league);
-
-      // Fetch history for all managers
-      const histories: Record<number, ManagerHistory> = {};
-      for (const manager of league.standings.results) {
-        try {
-          const history = await fetchManagerHistory(manager.entry);
-          histories[manager.entry] = history;
-        } catch (error) {
-          console.error(`Failed to fetch history for manager ${manager.entry}:`, error);
+      
+      // Sort managers by rank and take top 50
+      const topManagers = [...league.standings.results]
+        .sort((a, b) => a.rank - b.rank)
+        .slice(0, 50);
+      
+      // Update league info with only top 50 managers
+      setLeagueInfo({
+        ...league,
+        standings: {
+          ...league.standings,
+          results: topManagers
         }
-      }
+      });
+
+      // Initialize histories with empty object
+      const histories: Record<number, ManagerHistory> = {};
       setManagerHistories(histories);
+
+      // Function to fetch a single manager's history with retries
+      const fetchManagerHistoryWithRetry = async (manager: { entry: number; player_name: string }, retries = 3): Promise<void> => {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+          try {
+            const history = await fetchManagerHistory(manager.entry);
+            // Update histories incrementally
+            setManagerHistories(prev => ({
+              ...prev,
+              [manager.entry]: history
+            }));
+            return;
+          } catch (error) {
+            console.error(`Attempt ${attempt} failed for manager ${manager.entry}:`, error);
+            if (attempt === retries) {
+              toast({
+                title: 'Warning',
+                description: `Failed to fetch data for ${manager.player_name}. Try generating again.`,
+                status: 'warning',
+                duration: 5000,
+                isClosable: true
+              });
+            } else {
+              // Wait before retrying, with exponential backoff
+              await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+            }
+          }
+        }
+      };
+
+      // Fetch histories with some concurrency control
+      const BATCH_SIZE = 5; // Process 5 managers at a time
+      for (let i = 0; i < topManagers.length; i += BATCH_SIZE) {
+        const batch = topManagers.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(manager => fetchManagerHistoryWithRetry(manager)));
+      }
+
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -241,7 +283,7 @@ function App() {
         description: error instanceof Error ? error.message : 'Failed to fetch league data',
         status: 'error',
         duration: 5000,
-        isClosable: true,
+        isClosable: true
       });
     } finally {
       setIsLoading(false);
