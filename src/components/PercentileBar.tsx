@@ -302,37 +302,21 @@ Percentile: ${percentile.toFixed(2)}%`}
               top={0}
               h="full"
             >
-              {/* Vertical lines at start and end of group */}
+              {/* Single continuous line */}
               <Box
                 position="absolute"
                 left={0}
-                top={0}
-                w="1px"
-                h="8px"
-                bg={range.color}
-              />
-              <Box
-                position="absolute"
                 right={0}
                 top={0}
-                w="1px"
-                h="8px"
+                height="4px"
                 bg={range.color}
               />
-              {/* Horizontal line connecting vertical lines */}
-              <Box
-                position="absolute"
-                left={0}
-                top="8px"
-                w="full"
-                h="1px"
-                bg={range.color}
-              />
+              
               {/* Label */}
               <Text
                 position="absolute"
                 left="50%"
-                top="12px"
+                top="8px"
                 transform="translateX(-50%)"
                 fontSize="xs"
                 color="whiteAlpha.900"
