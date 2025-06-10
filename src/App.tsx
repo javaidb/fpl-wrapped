@@ -292,10 +292,13 @@ function App() {
 
   return (
     <ChakraProvider theme={theme}>
-      <Box minH="100vh" bg={BACKGROUND_COLOR} position="relative" pb="16">
-        <Box w="100%" pt={8} bg={BACKGROUND_COLOR}>
-          <VStack spacing={8} align="stretch" bg={BACKGROUND_COLOR} px={4}>
-            <LeagueForm onSubmit={handleSubmit} />
+      <Box minH="100vh" bg={BACKGROUND_COLOR} position="relative" pb="16" overflow="hidden">
+        <Box w="100%" bg={BACKGROUND_COLOR}>
+          <VStack spacing={8} align="stretch" bg={BACKGROUND_COLOR}>
+            <LeagueForm 
+              onSubmit={handleSubmit} 
+              hasData={!!leagueInfo && Object.keys(managerHistories).length > 0}
+            />
             
             {isLoading && (
               <Box textAlign="center" py={10} bg={BACKGROUND_COLOR}>
@@ -304,7 +307,11 @@ function App() {
               </Box>
             )}
 
-            <div ref={contentRef} style={{ backgroundColor: BACKGROUND_COLOR }}>
+            <div 
+              id="league-content"
+              ref={contentRef} 
+              style={{ backgroundColor: BACKGROUND_COLOR }}
+            >
               {leagueInfo && Object.keys(managerHistories).length > 0 && (
                 <>
                   <Box mb={4} textAlign="right" bg={BACKGROUND_COLOR}>

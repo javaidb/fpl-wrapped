@@ -13,16 +13,25 @@ import {
   HStack,
   Divider,
 } from '@chakra-ui/react';
-import { IoFootball } from 'react-icons/io5';
+import { keyframes } from '@emotion/react';
+import { GiSoccerBall } from 'react-icons/gi';
+import { BsChevronDoubleDown } from 'react-icons/bs';
 
 const AWARDS_BG_COLOR = "rgb(0, 255, 133)";
 const AWARDS_TEXT_COLOR = "rgb(56, 0, 60)";
 
+const pulseKeyframes = keyframes`
+  0% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(10px); opacity: 0.5; }
+  100% { transform: translateY(0); opacity: 1; }
+`;
+
 interface LeagueFormProps {
   onSubmit: (leagueId: string) => void;
+  hasData?: boolean;
 }
 
-const LeagueForm = ({ onSubmit }: LeagueFormProps) => {
+const LeagueForm = ({ onSubmit, hasData = false }: LeagueFormProps) => {
   const [leagueId, setLeagueId] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -32,8 +41,25 @@ const LeagueForm = ({ onSubmit }: LeagueFormProps) => {
     }
   };
 
+  const scrollToContent = () => {
+    const content = document.getElementById('league-content');
+    if (content) {
+      content.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <Box bg={AWARDS_BG_COLOR} minH="100vh" display="flex" flexDirection="column">
+    <Box 
+      bg={AWARDS_BG_COLOR} 
+      minH="100vh" 
+      display="flex" 
+      flexDirection="column"
+      w="100vw"
+      position="relative"
+      left="50%"
+      right="50%"
+      mx="-50vw"
+    >
       {/* Main title section - takes up most of the viewport */}
       <Box flex="1" display="flex" alignItems="center" justifyContent="center" pb={0}>
         <VStack spacing={2}>
@@ -50,17 +76,13 @@ const LeagueForm = ({ onSubmit }: LeagueFormProps) => {
               FPL Wrapped
             </Heading>
             <Box
-              as={IoFootball}
+              as={GiSoccerBall}
               boxSize={{ base: "40px", md: "60px" }}
               color={AWARDS_TEXT_COLOR}
-              transition="transform 0.3s"
-              transformOrigin="center"
-              animation="spin 10s linear infinite"
               sx={{
-                "@keyframes spin": {
-                  "0%": { transform: "rotate(0deg)" },
-                  "100%": { transform: "rotate(360deg)" }
-                }
+                imageRendering: "pixelated",
+                transform: "scale(1.2)",
+                filter: "contrast(1.1)"
               }}
             />
           </HStack>
@@ -185,8 +207,25 @@ const LeagueForm = ({ onSubmit }: LeagueFormProps) => {
         </VStack>
       </Box>
 
-      {/* Bottom spacing */}
-      <Box h={20} />
+      {/* Pulsing arrow - only show when there's data */}
+      {hasData && (
+        <Box
+          position="absolute"
+          bottom="40px"
+          left="50%"
+          transform="translateX(-50%)"
+          cursor="pointer"
+          onClick={scrollToContent}
+          animation={`${pulseKeyframes} 2s infinite ease-in-out`}
+          _hover={{ opacity: 0.8 }}
+          transition="opacity 0.2s"
+        >
+          <BsChevronDoubleDown 
+            size={40} 
+            color={AWARDS_TEXT_COLOR}
+          />
+        </Box>
+      )}
     </Box>
   );
 };
