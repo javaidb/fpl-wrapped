@@ -66,7 +66,7 @@ const LeagueForm = ({ onSubmit, hasData = false }: LeagueFormProps) => {
           <HStack spacing={4} alignItems="center">
             <Heading
               as="h1"
-              fontSize={{ base: "6xl", md: "8xl", lg: "9xl" }}
+              fontSize={{ base: "5xl", md: "7xl", lg: "8xl" }}
               fontWeight="black"
               color={AWARDS_TEXT_COLOR}
               textAlign="center"
@@ -77,7 +77,7 @@ const LeagueForm = ({ onSubmit, hasData = false }: LeagueFormProps) => {
             </Heading>
             <Box
               as={GiSoccerBall}
-              boxSize={{ base: "40px", md: "60px" }}
+              boxSize={{ base: "35px", md: "50px" }}
               color={AWARDS_TEXT_COLOR}
               sx={{
                 imageRendering: "pixelated",
@@ -88,7 +88,7 @@ const LeagueForm = ({ onSubmit, hasData = false }: LeagueFormProps) => {
           </HStack>
           
           <Text 
-            fontSize={{ base: "lg", md: "xl" }} 
+            fontSize={{ base: "md", md: "lg" }} 
             textAlign="center" 
             color={AWARDS_TEXT_COLOR}
             maxW="2xl"
@@ -101,109 +101,96 @@ const LeagueForm = ({ onSubmit, hasData = false }: LeagueFormProps) => {
             Your League's Fantasy Premier League season visualized and analyzed
           </Text>
 
-          <VStack spacing={0} w="full">
-            <Box w="full" px={8}>
-              <Divider borderColor={AWARDS_TEXT_COLOR} opacity={0.3} />
-              <VStack py={2} spacing={1}>
-                <Text 
-                  textAlign="center"
-                  color={AWARDS_TEXT_COLOR}
+          <Box w="full" px={8}>
+            <Divider borderColor={AWARDS_TEXT_COLOR} opacity={0.3} />
+            <VStack py={2} spacing={1}>
+              <Text 
+                textAlign="center"
+                color={AWARDS_TEXT_COLOR}
+                fontSize="sm"
+                fontFamily="Roboto"
+                fontWeight="medium"
+              >
+                How to find your league ID:
+              </Text>
+              <OrderedList 
+                spacing={0.5} 
+                color={AWARDS_TEXT_COLOR} 
+                fontSize="xs"
+                opacity={0.8}
+                fontFamily="Roboto"
+                fontWeight="light"
+                textAlign="center"
+                listStylePosition="inside"
+              >
+                <ListItem>Visit the <Link href="https://fantasy.premierleague.com/" isExternal color={AWARDS_TEXT_COLOR} fontWeight="medium" _hover={{ opacity: 0.8 }}>FPL website</Link></ListItem>
+                <ListItem>Click on your league name</ListItem>
+                <ListItem>Copy the number from the URL</ListItem>
+              </OrderedList>
+            </VStack>
+            <Divider borderColor={AWARDS_TEXT_COLOR} opacity={0.3} />
+          </Box>
+
+          {/* Form section */}
+          <Box 
+            as="form"
+            onSubmit={handleSubmit}
+            w="full" 
+            maxW="md" 
+            px={4}
+          >
+            <HStack spacing={4} align="stretch">
+              <VStack flex={1} spacing={2}>
+                <Input
+                  type="text"
+                  placeholder="ENTER LEAGUE ID"
+                  value={leagueId}
+                  onChange={(e) => setLeagueId(e.target.value)}
+                  size="lg"
+                  height="60px"
+                  bg={AWARDS_TEXT_COLOR}
+                  color="white"
+                  border="none"
+                  _placeholder={{ 
+                    color: "whiteAlpha.700",
+                    fontSize: "md",
+                    letterSpacing: "wider"
+                  }}
                   fontSize="md"
                   fontFamily="Roboto"
-                  fontWeight="medium"
-                >
-                  How to find your league ID:
-                </Text>
-                <OrderedList 
-                  spacing={0.5} 
-                  color={AWARDS_TEXT_COLOR} 
-                  fontSize="sm"
-                  opacity={0.8}
+                  _hover={{ bg: AWARDS_TEXT_COLOR }}
+                  _focus={{
+                    bg: AWARDS_TEXT_COLOR,
+                    boxShadow: "0 0 0 1px white"
+                  }}
+                />
+                <Button
+                  type="submit"
+                  size="lg"
+                  w="full"
+                  height="60px"
+                  isDisabled={!leagueId}
+                  bg={AWARDS_TEXT_COLOR}
+                  color="white"
+                  _hover={{ 
+                    bg: AWARDS_TEXT_COLOR,
+                    opacity: 0.9 
+                  }}
+                  _active={{
+                    bg: AWARDS_TEXT_COLOR,
+                    opacity: 0.8
+                  }}
+                  fontSize="md"
+                  fontWeight="bold"
+                  borderRadius="lg"
                   fontFamily="Roboto"
-                  fontWeight="light"
-                  textAlign="center"
-                  listStylePosition="inside"
+                  fontStyle="italic"
                 >
-                  <ListItem>Visit the <Link href="https://fantasy.premierleague.com/" isExternal color={AWARDS_TEXT_COLOR} fontWeight="medium" _hover={{ opacity: 0.8 }}>FPL website</Link></ListItem>
-                  <ListItem>Click on your league name</ListItem>
-                  <ListItem>Copy the number from the URL</ListItem>
-                </OrderedList>
+                  Generate Wrapped
+                </Button>
               </VStack>
-              <Divider borderColor={AWARDS_TEXT_COLOR} opacity={0.3} />
-            </Box>
-
-            {/* Form section - directly after instructions */}
-            <Box
-              as="form"
-              onSubmit={handleSubmit}
-              w="full"
-              maxW="xl"
-              mx="auto"
-              mt={4}
-            >
-              <HStack spacing={4} align="flex-start">
-                <Text
-                  color={AWARDS_TEXT_COLOR}
-                  fontSize="sm"
-                  fontFamily="Roboto"
-                  fontWeight="light"
-                  letterSpacing="wider"
-                  pt={4}
-                  whiteSpace="nowrap"
-                >
-                  ENTER LEAGUE ID
-                </Text>
-                <VStack spacing={2} flex="1">
-                  <Input
-                    placeholder="League ID (e.g., 123456)"
-                    value={leagueId}
-                    onChange={(e) => setLeagueId(e.target.value)}
-                    size="lg"
-                    type="number"
-                    bg={AWARDS_TEXT_COLOR}
-                    color="white"
-                    _placeholder={{ color: "whiteAlpha.700" }}
-                    _hover={{ bg: AWARDS_TEXT_COLOR }}
-                    _focus={{ 
-                      bg: AWARDS_TEXT_COLOR,
-                      borderColor: "white",
-                      boxShadow: "0 0 0 1px white"
-                    }}
-                    fontSize="lg"
-                    height="60px"
-                    borderRadius="lg"
-                    borderColor="whiteAlpha.300"
-                    fontFamily="Roboto"
-                  />
-
-                  <Button
-                    type="submit"
-                    size="lg"
-                    w="full"
-                    height="60px"
-                    isDisabled={!leagueId}
-                    bg={AWARDS_TEXT_COLOR}
-                    color="white"
-                    _hover={{ 
-                      bg: AWARDS_TEXT_COLOR,
-                      opacity: 0.9 
-                    }}
-                    _active={{
-                      bg: AWARDS_TEXT_COLOR,
-                      opacity: 0.8
-                    }}
-                    fontSize="lg"
-                    fontWeight="bold"
-                    borderRadius="lg"
-                    fontFamily="Roboto"
-                    fontStyle="italic"
-                  >
-                    Generate Wrapped
-                  </Button>
-                </VStack>
-              </HStack>
-            </Box>
-          </VStack>
+            </HStack>
+          </Box>
         </VStack>
       </Box>
 
