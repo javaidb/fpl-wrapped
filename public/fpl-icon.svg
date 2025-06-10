@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="100" fill="url(#gradient)"/>
-  <path d="M256 120C176.5 120 112 184.5 112 264C112 343.5 176.5 408 256 408C335.5 408 400 343.5 400 264C400 184.5 335.5 120 256 120ZM256 368C198.1 368 152 321.9 152 264C152 206.1 198.1 160 256 160C313.9 160 360 206.1 360 264C360 321.9 313.9 368 256 368Z" fill="white"/>
-  <path d="M256 200C220.7 200 192 228.7 192 264C192 299.3 220.7 328 256 328C291.3 328 320 299.3 320 264C320 228.7 291.3 200 256 200Z" fill="white"/>
-  <defs>
-    <linearGradient id="gradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#805AD5"/>
-      <stop offset="1" stop-color="#D53F8C"/>
-    </linearGradient>
-  </defs>
+<svg width="32" height="32" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <!-- Crown base shape -->
+  <path 
+    d="M4 20 L8 12 L16 16 L24 12 L28 20 L26 22 L6 22 L4 20Z" 
+    fill="#805AD5"
+    stroke="none"
+  />
+  <!-- Crown points -->
+  <circle cx="8" cy="12" r="2" fill="#805AD5"/>
+  <circle cx="16" cy="10" r="2" fill="#805AD5"/>
+  <circle cx="24" cy="12" r="2" fill="#805AD5"/>
+  <!-- Base line -->
+  <rect x="6" y="24" width="20" height="2" fill="#805AD5"/>
 </svg> 
